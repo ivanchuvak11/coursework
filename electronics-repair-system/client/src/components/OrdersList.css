@@ -1,0 +1,33 @@
+.orders-container {
+    padding: 20px;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.orders-table th,
+.orders-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+.orders-table th {
+    background: #4caf50;
+    color: white;
+}
+
+.status-select {
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.loading {
+    text-align: center;
+    padding: 50px;
+    font-size: 18px;
+}
