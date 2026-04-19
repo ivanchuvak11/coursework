@@ -278,7 +278,7 @@ INSERT INTO spare_parts (part_name, category, quantity, min_quantity, price, sup
 ('Акумулятор iPhone 13', 'акумулятор', 8, 5, 850, 'Battery Pro', 'Стелаж B2'),
 ('Дисплей Samsung Galaxy S22', 'дисплей', 3, 3, 3500, 'Samsung Parts', 'Стелаж A2'),
 ('Термопаста Arctic MX-4', 'термоінтерфейс', 15, 5, 150, 'Cooling Shop', 'Стелаж C1'),
-('Порт зарядки Type-C', 'роз'єм', 12, 5, 280, 'Connector Inc', 'Стелаж B1'),
+('Порт зарядки Type-C', 'розєм', 12, 5, 280, 'Connector Inc', 'Стелаж B1'),
 ('Динамік для Xiaomi Mi 11', 'динамік', 6, 3, 450, 'Audio Parts', 'Стелаж D1'),
 ('Мікрофон для Xiaomi Mi 11', 'мікрофон', 4, 3, 380, 'Audio Parts', 'Стелаж D2'),
 ('Радіатор для Dell XPS', 'охолодження', 3, 2, 650, 'Cooling Shop', 'Стелаж C2');
@@ -380,3 +380,54 @@ JOIN orders o ON e.id = o.employee_id
 WHERE o.status IN ('виконано', 'видано')
 GROUP BY e.full_name
 ORDER BY orders_completed DESC;
+
+-- =====================================================
+-- ДОДАЄМО ТАБЛИЦІ ДЛЯ АВТОРИЗАЦІЇ
+-- =====================================================
+
+-- Таблиця користувачів (працівників)
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL, -- хешований пароль
+    employee_id INTEGER REFERENCES employees(id),
+    role VARCHAR(30) DEFAULT 'майстер', -- адмін, менеджер, майстер
+    is_active BOOLEAN DEFAULT true,
+    last_login TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT valid_role CHECK (role IN ('адмін', 'менеджер', 'майстер'))
+);
+
+-- Таблиця сесій (для JWT токенів)
+CREATE TABLE IF NOT EXISTS sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(500) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Додаємо поле created_by в замовлення (хто створив)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id);
+
+-- Додаємо історію дій користувачів
+CREATE TABLE IF NOT EXISTS user_actions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    action_type VARCHAR(50), -- login, logout, create_order, update_status, etc.
+    action_details TEXT,
+    ip_address VARCHAR(45),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Додаємо тестових користувачів (пароль: 123456)
+-- Пароль хешований за допомогою bcrypt (для прикладу)
+INSERT INTO users (username, password_hash, employee_id, role) VALUES
+('admin', '$2b$10$5f4v5Rq7Xq8Yq9Zr0s1tU2v3w4x5y6z7A8B9C0D1E2F3G4H5I6J7K8L9M0', NULL, 'адмін'),
+('master1', '$2b$10$5f4v5Rq7Xq8Yq9Zr0s1tU2v3w4x5y6z7A8B9C0D1E2F3G4H5I6J7K8L9M0', 1, 'майстер'),
+('manager1', '$2b$10$5f4v5Rq7Xq8Yq9Zr0s1tU2v3w4x5y6z7A8B9C0D1E2F3G4H5I6J7K8L9M0', 3, 'менеджер');
+
+-- Оновлюємо співробітників (додаємо логіни)
+UPDATE employees SET full_name = 'Адміністратор Системи' WHERE id = 1;
+UPDATE employees SET full_name = 'Андрій Мельник (Майстер)' WHERE id = 1;
+UPDATE employees SET full_name = 'Оксана Гнатенко (Менеджер)' WHERE id = 3;

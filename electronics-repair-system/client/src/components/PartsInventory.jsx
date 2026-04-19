@@ -41,10 +41,10 @@ export default function PartsInventory() {
 
     return (
         <div className="parts-container">
-            <h2>🔩 Склад запчастин</h2>
+            <h2> Склад запчастин</h2>
             
             <div className="add-part-form">
-                <h3>➕ Додати нову деталь</h3>
+                <h3> Додати нову деталь</h3>
                 <form onSubmit={addPart}>
                     <input
                         type="text"

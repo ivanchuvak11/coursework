@@ -52,10 +52,10 @@ export default function LandingPage() {
                     <h2>Menu</h2>
                     <ul className="links">
                         <li><a href="/">Home</a></li>
-                        <li><a href="/orders">📋 Замовлення</a></li>
-                        <li><a href="/new-order">➕ Нове замовлення</a></li>
-                        <li><a href="/parts">🔩 Деталі</a></li>
-                        <li><a href="/login">🔐 Log In</a></li>
+                        <li><a href="/orders"> Замовлення</a></li>
+                        <li><a href="/new-order"> Нове замовлення</a></li>
+                        <li><a href="/parts"> Деталі</a></li>
+                        <li><a href="/login"> Log In</a></li>
                     </ul>
                     <a href="#" className="close">Close</a>
                 </div>
