@@ -82,7 +82,7 @@ export default function Login({ onLogin }) {
         
         <div className="test-credentials">
           <p> Тестові дані:</p>
-          <p> admin / 123456 &nbsp;|&nbsp; master1 / 123456 &nbsp;|&nbsp;  manager1 / 123456</p>
+          <p>admin / 123456 &nbsp;|&nbsp; master1 / 123456 &nbsp;|&nbsp;  manager1 / 123456</p>
         </div>
       </div>
     </div>
