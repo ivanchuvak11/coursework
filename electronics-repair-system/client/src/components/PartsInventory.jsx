@@ -1,97 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './PartsInventory.css';
+import './SharedDark.css';
 
 export default function PartsInventory() {
-    const [parts, setParts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [newPart, setNewPart] = useState({ part_name: '', quantity: 0, price: 0 });
+  const [parts, setParts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newPart, setNewPart] = useState({ part_name: '', quantity: '', price: '' });
+  const [showForm, setShowForm] = useState(false);
 
-    useEffect(() => {
-        fetchParts();
-    }, []);
+  useEffect(() => { fetchParts(); }, []);
 
-    const fetchParts = async () => {
-        try {
-            const res = await axios.get('http://localhost:5000/api/parts');
-            setParts(res.data);
-            setLoading(false);
-        } catch (error) {
-            console.error('Помилка завантаження деталей:', error);
-            setLoading(false);
-        }
-    };
+  const fetchParts = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/parts');
+      setParts(res.data);
+    } catch (error) { console.error(error); }
+    finally { setLoading(false); }
+  };
 
-    const addPart = async (e) => {
-        e.preventDefault();
-        try {
-            await axios.post('http://localhost:5000/api/parts', newPart);
-            fetchParts();
-            setNewPart({ part_name: '', quantity: 0, price: 0 });
-            alert('Деталь додано!');
-        } catch (error) {
-            console.error('Помилка додавання:', error);
-            alert('Помилка при додаванні деталі');
-        }
-    };
+  const addPart = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('http://localhost:5000/api/parts', newPart);
+      fetchParts();
+      setNewPart({ part_name: '', quantity: '', price: '' });
+      setShowForm(false);
+    } catch (error) { alert('Помилка'); }
+  };
 
-    if (loading) {
-        return <div className="loading">Завантаження...</div>;
-    }
+  if (loading) return <div className="loading">Завантаження...</div>;
 
-    return (
-        <div className="parts-container">
-            <h2> Склад запчастин</h2>
-            
-            <div className="add-part-form">
-                <h3> Додати нову деталь</h3>
-                <form onSubmit={addPart}>
-                    <input
-                        type="text"
-                        placeholder="Назва деталі"
-                        value={newPart.part_name}
-                        onChange={(e) => setNewPart({...newPart, part_name: e.target.value})}
-                        required
-                    />
-                    <input
-                        type="number"
-                        placeholder="Кількість"
-                        value={newPart.quantity}
-                        onChange={(e) => setNewPart({...newPart, quantity: parseInt(e.target.value)})}
-                        required
-                    />
-                    <input
-                        type="number"
-                        step="0.01"
-                        placeholder="Ціна"
-                        value={newPart.price}
-                        onChange={(e) => setNewPart({...newPart, price: parseFloat(e.target.value)})}
-                        required
-                    />
-                    <button type="submit">Додати</button>
-                </form>
-            </div>
-
-            <table className="parts-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Назва деталі</th>
-                        <th>Кількість</th>
-                        <th>Ціна (грн)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {parts.map(part => (
-                        <tr key={part.id}>
-                            <td>{part.id}</td>
-                            <td>{part.part_name}</td>
-                            <td className={part.quantity < 5 ? 'low-stock' : ''}>{part.quantity}</td>
-                            <td>{part.price} ₴</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
+  return (
+    <div className="dark-page">
+      <div className="page-header">
+        <h2>Склад запчастин</h2>
+        <p>Всього найменувань: {parts.length}</p>
+      </div>
+      <button className="btn-primary" style={{ marginBottom: '1rem' }} onClick={() => setShowForm(!showForm)}>+ Додати деталь</button>
+      {showForm && (
+        <form onSubmit={addPart} className="form-card" style={{ marginBottom: '2rem' }}>
+          <div className="form-grid">
+            <input placeholder="Назва деталі" value={newPart.part_name} onChange={(e) => setNewPart({...newPart, part_name: e.target.value})} required />
+            <input placeholder="Кількість" type="number" value={newPart.quantity} onChange={(e) => setNewPart({...newPart, quantity: e.target.value})} required />
+            <input placeholder="Ціна (грн)" type="number" step="0.01" value={newPart.price} onChange={(e) => setNewPart({...newPart, price: e.target.value})} required />
+          </div>
+          <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }}>Зберегти</button>
+        </form>
+      )}
+      <div className="table-responsive">
+        <table className="data-table">
+          <thead><tr><th>ID</th><th>Назва</th><th>Кількість</th><th>Ціна (грн)</th></tr></thead>
+          <tbody>
+            {parts.map(p => (
+              <tr key={p.id}>
+                <td>{p.id}</td><td>{p.part_name}</td><td>{p.quantity}</td><td>{p.price} ₴</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }

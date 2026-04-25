@@ -1,115 +1,44 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import './NewOrderForm.css';
+import './SharedDark.css';
 
 export default function NewOrderForm() {
-    const [formData, setFormData] = useState({
-        clientName: '',
-        clientPhone: '',
-        deviceType: 'smartphone',
-        brand: '',
-        model: '',
-        issueDescription: ''
-    });
+  const [form, setForm] = useState({
+    clientName: '', clientPhone: '', deviceType: 'smartphone', brand: '', model: '', issueDescription: ''
+  });
+  const [message, setMessage] = useState('');
 
-    const [message, setMessage] = useState('');
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post('http://localhost:5000/api/orders', form);
+      setMessage(`✅ Замовлення #${res.data.id} створено!`);
+      setForm({ clientName: '', clientPhone: '', deviceType: 'smartphone', brand: '', model: '', issueDescription: '' });
+    } catch (err) {
+      setMessage('❌ Помилка');
+    }
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const response = await axios.post('http://localhost:5000/api/orders', formData);
-            setMessage(`✅ Замовлення #${response.data.id} успішно створено!`);
-            setFormData({
-                clientName: '',
-                clientPhone: '',
-                deviceType: 'smartphone',
-                brand: '',
-                model: '',
-                issueDescription: ''
-            });
-        } catch (error) {
-            setMessage('❌ Помилка при створенні замовлення');
-            console.error(error);
-        }
-    };
-
-    return (
-        <div className="new-order-container">
-            <h2>➕ Нове замовлення на ремонт</h2>
-            {message && <div className="message">{message}</div>}
-            <form onSubmit={handleSubmit} className="order-form">
-                <div className="form-group">
-                    <label>ПІБ клієнта *</label>
-                    <input
-                        type="text"
-                        name="clientName"
-                        value={formData.clientName}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>Телефон клієнта *</label>
-                    <input
-                        type="tel"
-                        name="clientPhone"
-                        value={formData.clientPhone}
-                        onChange={handleChange}
-                        required
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>Тип пристрою</label>
-                    <select name="deviceType" value={formData.deviceType} onChange={handleChange}>
-                        <option value="smartphone">Смартфон</option>
-                        <option value="laptop">Ноутбук</option>
-                        <option value="tablet">Планшет</option>
-                        <option value="tv">Телевізор</option>
-                        <option value="other">Інше</option>
-                    </select>
-                </div>
-
-                <div className="form-group">
-                    <label>Бренд</label>
-                    <input
-                        type="text"
-                        name="brand"
-                        value={formData.brand}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>Модель</label>
-                    <input
-                        type="text"
-                        name="model"
-                        value={formData.model}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>Опис проблеми</label>
-                    <textarea
-                        name="issueDescription"
-                        value={formData.issueDescription}
-                        onChange={handleChange}
-                        rows="4"
-                    />
-                </div>
-
-                <button type="submit" className="submit-btn">Створити замовлення</button>
-            </form>
+  return (
+    <div className="dark-page">
+      <div className="page-header">
+        <h2>Нове замовлення</h2>
+        <p>Заповніть форму для реєстрації ремонту</p>
+      </div>
+      {message && <div style={{ background: '#4c5c96', padding: '0.8rem', borderRadius: '5px', marginBottom: '1rem' }}>{message}</div>}
+      <form onSubmit={handleSubmit} className="form-card">
+        <div className="form-grid">
+          <div className="form-group"><label>ПІБ клієнта *</label><input name="clientName" value={form.clientName} onChange={handleChange} required /></div>
+          <div className="form-group"><label>Телефон *</label><input name="clientPhone" value={form.clientPhone} onChange={handleChange} required /></div>
+          <div className="form-group"><label>Тип пристрою</label><select name="deviceType" value={form.deviceType} onChange={handleChange}><option value="smartphone">Смартфон</option><option value="laptop">Ноутбук</option><option value="tablet">Планшет</option><option value="other">Інше</option></select></div>
+          <div className="form-group"><label>Бренд</label><input name="brand" value={form.brand} onChange={handleChange} /></div>
+          <div className="form-group"><label>Модель</label><input name="model" value={form.model} onChange={handleChange} /></div>
+          <div className="form-group"><label>Опис проблеми</label><textarea name="issueDescription" rows="3" value={form.issueDescription} onChange={handleChange}></textarea></div>
         </div>
-    );
+        <div style={{ marginTop: '2rem', textAlign: 'right' }}><button type="submit" className="btn-primary">Створити замовлення</button></div>
+      </form>
+    </div>
+  );
 }

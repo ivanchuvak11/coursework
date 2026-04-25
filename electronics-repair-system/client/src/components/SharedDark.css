@@ -1,0 +1,171 @@
+/* Темна тема для всіх внутрішніх сторінок */
+.dark-page {
+  background-color: #2e3141;
+  padding: 2rem 0;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.125);
+  padding-bottom: 1rem;
+}
+
+.page-header h2 {
+  font-family: 'Raleway', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-header p {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.filters-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.filters-row input, .filters-row select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.125);
+  border-radius: 5px;
+  padding: 0.6rem 1rem;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.filters-row input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filters-row select {
+  background-color: #353849;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  background: #353849;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.125);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 1rem;
+  background-color: #3d4051;
+  font-family: 'Raleway', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.125);
+}
+
+.data-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.data-table tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.7rem;
+  border-radius: 20px;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+select {
+  background: #2e3141;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  color: white;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: rgba(255,255,255,0.6);
+}
+
+/* Нова форма */
+.form-card {
+  background: #353849;
+  border: 2px solid rgba(255, 255, 255, 0.125);
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input, 
+.form-group select, 
+.form-group textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.125);
+  border-radius: 5px;
+  padding: 0.7rem;
+  color: white;
+}
+
+.btn-primary {
+  background: #4c5c96;
+  border: none;
+  padding: 0.8rem 1.8rem;
+  border-radius: 5px;
+  color: white;
+  font-family: 'Raleway', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #53639e;
+}
+
+/* картки для деталей (якщо використовуються) */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.data-card {
+  background: #353849;
+  border: 2px solid rgba(255, 255, 255, 0.125);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
