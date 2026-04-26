@@ -272,3 +272,161 @@ body {
   min-height: 100vh;
   width: 100%;
 }
+
+/* ========== МОДАЛЬНІ ВІКНА ========== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.35);  /* СВІТЛЕ ЗАТЕМНЕННЯ */
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.modal-content {
+  background: rgba(46, 49, 65, 0.95);  /* НАПІВПРОЗОРИЙ ФОН */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 450px;
+  max-height: 85vh;
+  position: relative;
+  animation: modalFadeIn 0.2s ease;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Для вікна "Про нас" трохи ширше */
+.about-modal {
+  max-width: 550px;
+}
+
+/* Стилізація скролбара */
+.modal-scroll {
+  overflow-y: auto;
+  padding: 0;
+}
+
+.modal-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.modal-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: #4c5c96;
+  border-radius: 10px;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #5c6ca6;
+}
+
+/* Заголовок */
+.modal-content h3 {
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.2rem;
+  text-align: center;
+  padding: 1rem 1rem 0.5rem;
+  margin: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+/* Кнопка закриття */
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  color: #fff;
+}
+
+/* Контент */
+.contact-info,
+.about-info {
+  padding: 0.8rem 1.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.contact-info:last-child,
+.about-info:last-child {
+  border-bottom: none;
+  padding-bottom: 1.2rem;
+}
+
+.contact-info p,
+.about-info p {
+  margin: 0.3rem 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.contact-info strong,
+.about-info strong {
+  color: #4c5c96;
+  font-size: 0.85rem;
+}
+
+.about-info ul {
+  margin: 0.3rem 0;
+  padding-left: 1.2rem;
+}
+
+.about-info li {
+  margin: 0.3rem 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Анімація */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-content {
+    max-width: 95%;
+    border-radius: 16px;
+  }
+  
+  .contact-info p,
+  .about-info p,
+  .about-info li {
+    font-size: 0.75rem;
+  }
+  
+  .modal-content h3 {
+    font-size: 1rem;
+  }
+}
