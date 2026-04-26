@@ -1,266 +1,284 @@
 const express = require('express');
 const cors = require('cors');
+const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ========== ТЕСТОВІ ДАНІ В ПАМ'ЯТІ ==========
-let orders = [
-    { 
-        id: 1, 
-        full_name: 'Іван Петренко', 
-        phone: '+380501234567', 
-        device_type: 'smartphone',
-        brand: 'Apple',
-        model: 'iPhone 13',
-        status: 'прийнято',
-        issue_description: 'Не вмикається',
-        created_at: new Date().toISOString()
-    },
-    { 
-        id: 2, 
-        full_name: 'Марія Шевченко', 
-        phone: '+380671234568', 
-        device_type: 'laptop',
-        brand: 'Dell',
-        model: 'XPS 15',
-        status: 'ремонт',
-        issue_description: 'Перегрівається',
-        created_at: new Date().toISOString()
-    },
-    { 
-        id: 3, 
-        full_name: 'Олександр Коваленко', 
-        phone: '+380931234569', 
-        device_type: 'smartphone',
-        brand: 'Samsung',
-        model: 'Galaxy S22',
-        status: 'діагностика',
-        issue_description: 'Розбитий екран',
-        created_at: new Date().toISOString()
-    }
-];
-
-let parts = [
-    { id: 1, part_name: 'Дисплей iPhone 13', quantity: 5, price: 3200, category: 'дисплей' },
-    { id: 2, part_name: 'Акумулятор Samsung', quantity: 8, price: 850, category: 'акумулятор' },
-    { id: 3, part_name: 'Термопаста Arctic MX-4', quantity: 15, price: 150, category: 'термоінтерфейс' },
-    { id: 4, part_name: 'Порт зарядки Type-C', quantity: 12, price: 280, category: 'роз\'єм' }
-];
-
-let nextOrderId = 4;
-let nextPartId = 5;
-
-// ========== ТЕСТОВІ КОРИСТУВАЧІ (ВСЕ В КОДІ, БЕЗ БД) ==========
-const TEST_USERS = [
-    { id: 1, username: 'admin', password: '123456', role: 'адмін' },
-    { id: 2, username: 'master1', password: '123456', role: 'майстер' },
-    { id: 3, username: 'manager1', password: '123456', role: 'менеджер' }
-];
-
-// Зберігаємо активні токени
-let activeTokens = {};
-
-// ========== АВТОРИЗАЦІЯ (ПРАЦЮЄ БЕЗ БД) ==========
-app.post('/api/auth/login', (req, res) => {
-    const { username, password } = req.body;
-    
-    console.log('🔐 Спроба входу:', username);
-    
-    const user = TEST_USERS.find(u => u.username === username && u.password === password);
-    
-    if (!user) {
-        console.log('❌ Невірний логін або пароль');
-        return res.status(401).json({ error: 'Невірний логін або пароль' });
-    }
-    
-    // Створюємо простий токен
-    const token = Buffer.from(`${user.id}:${user.username}:${Date.now()}`).toString('base64');
-    activeTokens[token] = user.id;
-    
-    console.log('✅ Вхід успішний:', user.username, 'Роль:', user.role);
-    
-    res.json({
-        success: true,
-        token: token,
-        user: {
-            id: user.id,
-            username: user.username,
-            role: user.role
-        }
-    });
+// ========== ПІДКЛЮЧЕННЯ ДО POSTGRESQL ==========
+const pool = new Pool({
+  user: 'postgres',
+  password: '1',      // ВАШ ПАРОЛЬ
+  host: 'localhost',
+  port: 5432,
+  database: 'repair_workshop',
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
-// Middleware для перевірки токена
-const authMiddleware = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (!token) {
-        return res.status(401).json({ error: 'Немає токена' });
-    }
-    
-    if (!activeTokens[token]) {
-        return res.status(401).json({ error: 'Токен недійсний' });
-    }
-    
-    try {
-        const decoded = Buffer.from(token, 'base64').toString();
-        const [userId] = decoded.split(':');
-        const user = TEST_USERS.find(u => u.id === parseInt(userId));
-        
-        if (!user) {
-            return res.status(401).json({ error: 'Користувача не знайдено' });
-        }
-        
-        req.user = user;
-        next();
-    } catch (err) {
-        return res.status(401).json({ error: 'Невірний токен' });
-    }
+// Перевірка підключення
+pool.connect((err, client, release) => {
+  if (err) {
+    console.error('❌ Помилка підключення до PostgreSQL:', err.message);
+  } else {
+    console.log('✅ Підключено до PostgreSQL (repair_workshop)');
+    release();
+  }
+});
+
+// ========== СЕКРЕТНИЙ КЛЮЧ ДЛЯ JWT ==========
+const JWT_SECRET = 'repairmaster-secret-key-2024';
+
+// ========== ДОПОМІЖНІ ФУНКЦІЇ ==========
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user.id, username: user.username, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
 };
 
-app.get('/api/auth/me', authMiddleware, (req, res) => {
+const verifyToken = (token) => {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    return null;
+  }
+};
+
+// Middleware для перевірки токена
+const authMiddleware = async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Немає токена авторизації' });
+  }
+
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    return res.status(401).json({ error: 'Невірний або прострочений токен' });
+  }
+
+  // Перевіряємо чи існує користувач в БД
+  const user = await pool.query('SELECT id, username, role FROM users WHERE id = $1 AND is_active = true', [decoded.id]);
+  if (user.rows.length === 0) {
+    return res.status(401).json({ error: 'Користувача не знайдено' });
+  }
+
+  req.user = user.rows[0];
+  next();
+};
+
+// Middleware для перевірки ролі
+const checkRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Не авторизовано' });
+    }
+    if (roles.includes(req.user.role)) {
+      next();
+    } else {
+      res.status(403).json({ error: 'Недостатньо прав' });
+    }
+  };
+};
+
+// ========== АВТОРИЗАЦІЯ ==========
+
+// ЛОГІН (СПРОЩЕНА ВЕРСІЯ - ПРЯМЕ ПОРІВНЯННЯ)
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  console.log('Спроба входу:', username);
+
+  try {
+    const result = await pool.query(
+      'SELECT id, username, role, password_hash FROM users WHERE username = $1 AND is_active = true',
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Невірний логін або пароль' });
+    }
+
+    const user = result.rows[0];
+    
+    // ПРЯМЕ ПОРІВНЯННЯ паролів (без bcrypt)
+    if (user.password_hash !== password) {
+      return res.status(401).json({ error: 'Невірний логін або пароль' });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
+
     res.json({
-        id: req.user.id,
-        username: req.user.username,
-        role: req.user.role
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      },
     });
+  } catch (err) {
+    console.error('Помилка логіну:', err);
+    res.status(500).json({ error: 'Помилка сервера' });
+  }
 });
 
-app.post('/api/auth/logout', (req, res) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (token) {
-        delete activeTokens[token];
-    }
-    res.json({ success: true });
+// Отримати поточного користувача
+app.get('/api/auth/me', authMiddleware, async (req, res) => {
+  res.json(req.user);
+});
+
+// Логаут
+app.post('/api/auth/logout', authMiddleware, async (req, res) => {
+  res.json({ success: true });
 });
 
 // ========== ЗАМОВЛЕННЯ ==========
-app.get('/api/orders', authMiddleware, (req, res) => {
-    res.json(orders);
+
+// Отримати всі замовлення (з деталями клієнта та пристрою)
+app.get('/api/orders', authMiddleware, async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        o.id,
+        o.status,
+        o.repair_cost,
+        o.total_cost,
+        o.created_at,
+        o.updated_at,
+        c.full_name,
+        c.phone,
+        d.device_type,
+        d.brand,
+        d.model,
+        d.issue_description
+      FROM orders o
+      JOIN devices d ON o.device_id = d.id
+      JOIN clients c ON d.client_id = c.id
+      ORDER BY o.created_at DESC
+    `;
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Помилка отримання замовлень' });
+  }
 });
 
-app.post('/api/orders', authMiddleware, (req, res) => {
-    const { clientName, clientPhone, deviceType, brand, model, issueDescription } = req.body;
-    
-    const newOrder = {
-        id: nextOrderId++,
-        full_name: clientName,
-        phone: clientPhone,
-        device_type: deviceType,
-        brand: brand || '',
-        model: model || '',
-        status: 'прийнято',
-        issue_description: issueDescription,
-        created_at: new Date().toISOString(),
-        created_by: req.user.username
-    };
-    orders.unshift(newOrder);
-    console.log('📦 Створено замовлення #' + newOrder.id);
-    res.json(newOrder);
+// Створити нове замовлення
+app.post('/api/orders', authMiddleware, async (req, res) => {
+  const { clientName, clientPhone, deviceType, brand, model, issueDescription } = req.body;
+
+  const client = await pool.query(
+    'INSERT INTO clients (full_name, phone) VALUES ($1, $2) ON CONFLICT (phone) DO UPDATE SET full_name = $1 RETURNING id',
+    [clientName, clientPhone]
+  );
+
+  const device = await pool.query(
+    'INSERT INTO devices (client_id, device_type, brand, model, issue_description) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+    [client.rows[0].id, deviceType, brand, model, issueDescription]
+  );
+
+  const order = await pool.query(
+    'INSERT INTO orders (device_id, status, created_by) VALUES ($1, $2, $3) RETURNING *',
+    [device.rows[0].id, 'прийнято', req.user.id]
+  );
+
+  res.json(order.rows[0]);
 });
 
-app.put('/api/orders/:id/status', authMiddleware, (req, res) => {
-    const id = parseInt(req.params.id);
-    const order = orders.find(o => o.id === id);
-    
-    if (order) {
-        order.status = req.body.status;
-        console.log(`📊 Замовлення #${id}: статус змінено на "${order.status}" (${req.user.username})`);
-        res.json(order);
-    } else {
-        res.status(404).json({ error: 'Замовлення не знайдено' });
-    }
+// Оновити статус замовлення
+app.put('/api/orders/:id/status', authMiddleware, async (req, res) => {
+  const { status } = req.body;
+  const orderId = req.params.id;
+
+  const result = await pool.query(
+    `UPDATE orders 
+     SET status = $1, updated_at = CURRENT_TIMESTAMP,
+         completed_at = CASE WHEN $1 = 'виконано' THEN CURRENT_TIMESTAMP ELSE completed_at END
+     WHERE id = $2 RETURNING *`,
+    [status, orderId]
+  );
+
+  res.json(result.rows[0]);
 });
 
-app.post('/api/orders/:id/parts', authMiddleware, (req, res) => {
-    console.log(`🔩 Додано деталь до замовлення #${req.params.id} (${req.user.username})`);
-    res.json({ success: true });
+// Додати деталь до замовлення
+app.post('/api/orders/:id/parts', authMiddleware, async (req, res) => {
+  const orderId = req.params.id;
+  const { partId, quantity } = req.body;
+
+  const part = await pool.query('SELECT price FROM spare_parts WHERE id = $1', [partId]);
+  const priceAtTime = part.rows[0].price;
+
+  await pool.query(
+    'INSERT INTO order_parts (order_id, part_id, quantity_used, price_at_time) VALUES ($1, $2, $3, $4)',
+    [orderId, partId, quantity, priceAtTime]
+  );
+
+  await pool.query('UPDATE spare_parts SET quantity = quantity - $1 WHERE id = $2', [quantity, partId]);
+
+  res.json({ success: true });
 });
 
-// ========== ДЕТАЛІ ==========
-app.get('/api/parts', authMiddleware, (req, res) => {
-    res.json(parts);
+// ========== ДЕТАЛІ (СКЛАД) ==========
+
+// Отримати всі деталі
+app.get('/api/parts', authMiddleware, async (req, res) => {
+  const result = await pool.query('SELECT * FROM spare_parts ORDER BY id');
+  res.json(result.rows);
 });
 
-app.post('/api/parts', authMiddleware, (req, res) => {
-    const { part_name, quantity, price, category } = req.body;
-    
-    const newPart = {
-        id: nextPartId++,
-        part_name: part_name,
-        quantity: parseInt(quantity) || 0,
-        price: parseFloat(price) || 0,
-        category: category || 'інше'
-    };
-    parts.push(newPart);
-    console.log('🔧 Додано деталь:', newPart.part_name);
-    res.json(newPart);
+// Додати нову деталь
+app.post('/api/parts', authMiddleware, async (req, res) => {
+  const { part_name, quantity, price, category, supplier } = req.body;
+
+  const result = await pool.query(
+    'INSERT INTO spare_parts (part_name, quantity, price, category, supplier) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+    [part_name, quantity || 0, price || 0, category || 'інше', supplier || '']
+  );
+
+  res.json(result.rows[0]);
 });
 
-app.put('/api/parts/:id', authMiddleware, (req, res) => {
-    const id = parseInt(req.params.id);
-    const part = parts.find(p => p.id === id);
-    
-    if (part) {
-        part.quantity = req.body.quantity;
-        res.json(part);
-    } else {
-        res.status(404).json({ error: 'Деталь не знайдено' });
-    }
+// Оновити кількість деталі
+app.put('/api/parts/:id', authMiddleware, async (req, res) => {
+  const { quantity } = req.body;
+  const partId = req.params.id;
+
+  const result = await pool.query('UPDATE spare_parts SET quantity = $1 WHERE id = $2 RETURNING *', [quantity, partId]);
+  res.json(result.rows[0]);
 });
 
-// ========== SMS СПОВІЩЕННЯ ==========
+// ========== SMS СПОВІЩЕННЯ (СИМУЛЯЦІЯ) ==========
 app.post('/api/send-status-sms', authMiddleware, (req, res) => {
-    const { phone, orderId, status, clientName } = req.body;
-    console.log('📱 SMS СПОВІЩЕННЯ:');
-    console.log(`   📞 До: ${phone}`);
-    console.log(`   👤 Клієнт: ${clientName}`);
-    console.log(`   🔢 Замовлення #${orderId}`);
-    console.log(`   📊 Статус: ${status}`);
-    console.log(`   👨‍💼 Відправив: ${req.user.username}`);
-    res.json({ success: true, message: 'SMS відправлено (симуляція)' });
+  const { phone, orderId, status, clientName } = req.body;
+  console.log(`📱 SMS до ${phone}: Замовлення #${orderId} - статус змінено на "${status}"`);
+  res.json({ success: true });
 });
 
-// ========== СТАТИСТИКА ==========
-app.get('/api/admin/stats', authMiddleware, (req, res) => {
-    const stats = {
-        total_orders: orders.length,
-        completed_orders: orders.filter(o => o.status === 'виконано').length,
-        total_parts: parts.length,
-        total_revenue: 0,
-        active_users: Object.keys(activeTokens).length
-    };
-    res.json(stats);
-});
-
-// ========== ТЕСТ ==========
+// ========== ТЕСТОВИЙ МАРШРУТ ==========
 app.get('/api/test', (req, res) => {
-    res.json({ 
-        message: 'Сервер працює!', 
-        mode: 'спрощений режим (без БД)',
-        ordersCount: orders.length,
-        partsCount: parts.length,
-        availableUsers: TEST_USERS.map(u => ({ username: u.username, role: u.role }))
-    });
+  res.json({ message: 'Сервер працює з PostgreSQL!', time: new Date().toISOString() });
 });
 
-// ========== ЗАПУСК ==========
+// ========== ЗАПУСК СЕРВЕРА ==========
 const PORT = 5000;
 app.listen(PORT, () => {
-    console.log('\n' + '='.repeat(50));
-    console.log('✅ СЕРВЕР ЗАПУЩЕНО!');
-    console.log('='.repeat(50));
-    console.log(`🌐 Адреса: http://localhost:${PORT}`);
-    console.log(`📋 Тест: http://localhost:${PORT}/api/test`);
-    console.log('\n📝 ТЕСТОВІ ОБЛІКОВІ ДАНІ:');
-    console.log('   👑 Адмін:    admin / 123456');
-    console.log('   🔧 Майстер:  master1 / 123456');
-    console.log('   📋 Менеджер: manager1 / 123456');
-    console.log('\n💡 Це спрощена версія без PostgreSQL');
-    console.log('   Дані зберігаються в пам\'яті сервера');
-    console.log('='.repeat(50) + '\n');
+  console.log(`\n🚀 Сервер запущено на http://localhost:${PORT}`);
+  console.log(`📡 API тест: http://localhost:${PORT}/api/test`);
+  console.log(`🗄️  База даних: PostgreSQL (repair_workshop)\n`);
 });
