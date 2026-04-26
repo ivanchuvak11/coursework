@@ -1,52 +1,65 @@
+/* ========== ГЛОБАЛЬНІ СКИДАННЯ ========== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html, body, #root {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+}
+
 body {
   background-color: #2e3141;
-  background-image: linear-gradient(to top, rgba(46, 49, 65, 0.8), rgba(46, 49, 65, 0.8));
+  background-image: url('/images/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   font-family: 'Source Sans Pro', 'Segoe UI', Helvetica, sans-serif;
   font-weight: 300;
   line-height: 1.65;
   color: #ffffff;
 }
 
-.app-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-/* Header */
+/* ========== ХЕДЕР (НА ВСЮ ШИРИНУ, ЗМЕНШЕНА ВИСОТА) ========== */
 .header {
-  background-color: rgba(53, 56, 73, 0.95);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.125);
+  background: rgba(46, 49, 65, 0.85) !important;
+  backdrop-filter: blur(10px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  width: 100vw !important;
+  position: relative !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
 }
 
 .header-content {
-  max-width: 1400px;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
-  padding: 0 1.5em;
-  height: 3.5em;
+  padding: 0 1.5rem;
+  height: 2.8rem;  /* ЗМЕНШЕНО висоту (було 3.5rem) */
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-sizing: border-box;
 }
 
+/* ========== ЛОГОТИП (ЛІВОРУЧ) ========== */
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 0.75em;
+  gap: 0.5rem;
 }
 
 .logo-placeholder {
-  width: 32px;
-  height: 32px;
+  width: 28px;   /* ЗМЕНШЕНО */
+  height: 28px;  /* ЗМЕНШЕНО */
   background: rgba(255, 255, 255, 0.125);
   border-radius: 4px;
   overflow: hidden;
@@ -62,7 +75,7 @@ body {
   font-family: 'Raleway', sans-serif;
   font-weight: 700;
   letter-spacing: 0.1em;
-  font-size: 0.9rem;
+  font-size: 0.8rem;  /* ЗМЕНШЕНО */
   text-transform: uppercase;
 }
 
@@ -70,21 +83,23 @@ body {
   font-weight: 200;
 }
 
-/* Навігація */
+/* ========== НАВІГАЦІЯ (ПРАВОРУЧ) ========== */
 .desktop-nav {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.3rem;
+  margin-left: auto; /* притискає до правого краю */
+  margin-right: 1rem;
 }
 
 .desktop-nav a {
   font-family: 'Raleway', sans-serif;
-  font-size: 0.8rem;
+  font-size: 0.7rem;  /* ЗМЕНШЕНО */
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   text-decoration: none;
-  color: #ffffff;
-  padding: 0.5rem 1rem;
+  color: #fff;
+  padding: 0.4rem 0.8rem;  /* ЗМЕНШЕНО */
   border-radius: 5px;
   transition: background-color 0.2s;
 }
@@ -97,16 +112,16 @@ body {
   background-color: #4c5c96;
 }
 
-/* Профіль */
+/* ========== ПРОФІЛЬ КОРИСТУВАЧА (КРАЙНІЙ ПРАВОРУЧ) ========== */
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 28px;   /* ЗМЕНШЕНО */
+  height: 28px;  /* ЗМЕНШЕНО */
   background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   overflow: hidden;
@@ -119,36 +134,36 @@ body {
 }
 
 .user-name {
-  font-size: 0.85rem;
+  font-size: 0.75rem;  /* ЗМЕНШЕНО */
   font-weight: 600;
 }
 
 .logout-btn {
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: #fff;
   font-family: 'Raleway', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.65rem;  /* ЗМЕНШЕНО */
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   cursor: pointer;
-  padding: 0.4rem 0.8rem;
+  padding: 0.3rem 0.6rem;  /* ЗМЕНШЕНО */
   border-radius: 5px;
-  transition: background 0.2s;
+  transition: background-color 0.2s;
 }
 
 .logout-btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Мобільне меню */
+/* ========== МОБІЛЬНЕ МЕНЮ ========== */
 .mobile-menu-btn {
   display: none;
   background: none;
   border: none;
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   cursor: pointer;
 }
 
@@ -156,18 +171,19 @@ body {
   display: none;
   flex-direction: column;
   background-color: #353849;
-  padding: 1rem;
+  padding: 0.8rem;
   border-top: 2px solid rgba(255, 255, 255, 0.125);
 }
 
-.mobile-nav a, .mobile-logout-btn {
-  padding: 0.8rem;
+.mobile-nav a,
+.mobile-logout-btn {
+  padding: 0.6rem;
   color: white;
   text-decoration: none;
   font-family: 'Raleway', sans-serif;
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   border-radius: 5px;
 }
 
@@ -177,39 +193,45 @@ body {
   text-align: left;
 }
 
-.mobile-nav a:hover, .mobile-logout-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Головний контент */
+/* ========== ОСНОВНИЙ КОНТЕНТ ========== */
 .main-content {
   flex: 1;
-  padding: 2rem 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
   width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
-/* Футер */
+/* ========== ФУТЕР (НА ВСЮ ШИРИНУ) ========== */
 .footer {
-  background-color: #2e3141;
-  border-top: 2px solid rgba(255, 255, 255, 0.125);
-  padding: 2rem 1.5rem;
+  background: rgba(46, 49, 65, 0.7) !important;
+  backdrop-filter: blur(10px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+  width: 100vw !important;
+  position: relative !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
 }
 
 .footer-content {
-  max-width: 1400px;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
+  padding: 0.8rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.5);
+  box-sizing: border-box;
 }
 
 .footer-links {
   display: flex;
-  gap: 1.5rem;
+  gap: 1.2rem;
 }
 
 .footer-links a {
@@ -218,47 +240,35 @@ body {
   border-bottom: 1px dotted rgba(255, 255, 255, 0.3);
 }
 
-/* Адаптив */
+/* ========== АДАПТИВНІСТЬ ========== */
 @media (max-width: 768px) {
-  .desktop-nav, .user-profile {
+  .desktop-nav,
+  .user-profile {
     display: none;
   }
+
   .mobile-menu-btn {
     display: block;
   }
+
   .mobile-nav {
     display: flex;
   }
+
   .main-content {
-    padding: 1.5rem;
+    padding: 0;
   }
+
+  .header-content,
   .footer-content {
-    flex-direction: column;
-    gap: 1rem;
+    padding: 0 1rem;
   }
 }
 
-body {
-  background-image: url('/images/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  position: relative;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
+/* ========== КОНТЕЙНЕР ДЛЯ ГНУЧКОСТІ ========== */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   width: 100%;
-  height: 100%;
-  background-color: rgba(46, 49, 65, 0.7); /* затемнення для читабельності тексту */
-  pointer-events: none;
-  z-index: 0;
-}
-
-#root {
-  position: relative;
-  z-index: 1;
 }

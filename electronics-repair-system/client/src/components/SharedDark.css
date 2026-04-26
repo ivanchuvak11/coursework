@@ -1,171 +1,214 @@
-/* Темна тема для всіх внутрішніх сторінок */
-.dark-page {
-  background-color: #2e3141;
-  padding: 2rem 0;
+/* Глобальний фон (встановлюється окремо в body) */
+
+/* Стилі для всіх сторінок (крім логіну) */
+.dark-page,
+.orders-page,
+.parts-page,
+.new-order-page {
+  width: 100%;
+  min-height: calc(100vh - 70px);
+  padding: 2rem;
+  background: transparent;
 }
 
+/* Основний контейнер з прозорістю, як у футері */
+.glass-container {
+  background: rgba(46, 49, 65, 0.7);      /* той самий колір, що у футера */
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Заголовки сторінок */
 .page-header {
-  margin-bottom: 2rem;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.125);
-  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 0.75rem;
 }
-
 .page-header h2 {
-  font-family: 'Raleway', sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
 }
-
 .page-header p {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.filters-row {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-}
-
-.filters-row input, .filters-row select {
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.125);
-  border-radius: 5px;
-  padding: 0.6rem 1rem;
-  color: white;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.9rem;
 }
 
+/* Фільтри (пошук, селект) */
+.filters-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.filters-row input,
+.filters-row select {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.7rem 1rem;
+  color: white;
+  font-size: 0.9rem;
+}
 .filters-row input {
   flex: 1;
   min-width: 200px;
 }
-
 .filters-row select {
-  background-color: #353849;
+  background: rgba(46, 49, 65, 0.8);
 }
 
+/* Таблиця (скляний ефект) */
 .table-responsive {
+  width: 100%;
   overflow-x: auto;
-  background: #353849;
-  border-radius: 8px;
-  border: 2px solid rgba(255, 255, 255, 0.125);
+  background: rgba(46, 49, 65, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
 }
-
 .data-table th {
   text-align: left;
   padding: 1rem;
-  background-color: #3d4051;
-  font-family: 'Raleway', sans-serif;
+  background: rgba(0, 0, 0, 0.3);
   font-weight: 700;
-  letter-spacing: 0.05em;
   font-size: 0.8rem;
   text-transform: uppercase;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.125);
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
-
 .data-table td {
   padding: 0.8rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
-
 .data-table tr:hover {
-  background-color: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.05);
 }
 
+/* Бейдж статусу */
 .status-badge {
   display: inline-block;
-  padding: 0.2rem 0.7rem;
-  border-radius: 20px;
-  color: white;
-  font-size: 0.7rem;
+  padding: 0.2rem 0.8rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
   font-weight: 600;
-}
-
-select {
-  background: #2e3141;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 4px;
-  padding: 0.4rem 0.6rem;
   color: white;
 }
 
-.loading {
-  text-align: center;
-  padding: 3rem;
-  color: rgba(255,255,255,0.6);
-}
-
-/* Нова форма */
+/* Форми */
 .form-card {
-  background: #353849;
-  border: 2px solid rgba(255, 255, 255, 0.125);
-  border-radius: 8px;
-  padding: 2rem;
+  background: rgba(46, 49, 65, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
-
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.2rem;
 }
-
 .form-group label {
   display: block;
-  font-family: 'Raleway', sans-serif;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+  color: rgba(255, 255, 255, 0.9);
 }
-
-.form-group input, 
-.form-group select, 
+.form-group input,
+.form-group select,
 .form-group textarea {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid rgba(255, 255, 255, 0.125);
-  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
   padding: 0.7rem;
   color: white;
 }
-
 .btn-primary {
   background: #4c5c96;
   border: none;
-  padding: 0.8rem 1.8rem;
-  border-radius: 5px;
+  padding: 0.7rem 1.5rem;
+  border-radius: 0.5rem;
   color: white;
-  font-family: 'Raleway', sans-serif;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: 0.2s;
 }
-
 .btn-primary:hover {
-  background: #53639e;
+  background: #5c6ca6;
 }
 
-/* картки для деталей (якщо використовуються) */
+/* Картки для деталей */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
 }
-
 .data-card {
-  background: #353849;
-  border: 2px solid rgba(255, 255, 255, 0.125);
-  border-radius: 8px;
-  padding: 1.5rem;
+  background: rgba(46, 49, 65, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  padding: 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ЗНИЩИТИ ВСІ ЛІНІЇ НА ВСІХ СТОРІНКАХ */
+*,
+*::before,
+*::after {
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+/* Окремо для таблиць */
+table,
+tr,
+td,
+th,
+tbody,
+thead {
+  border: none !important;
+}
+
+/* Окремо для контейнерів */
+div,
+section,
+header,
+footer,
+main,
+article {
+  border: none !important;
+}
+
+/* Якщо лінії від background-image */
+.page-header::after,
+.page-header::before,
+.glass-container::after,
+.glass-container::before {
+  display: none !important;
+  content: none !important;
+}
