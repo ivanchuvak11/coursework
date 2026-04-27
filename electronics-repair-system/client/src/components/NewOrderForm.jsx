@@ -41,6 +41,18 @@ export default function NewOrderForm() {
           <div style={{ marginTop: '1.5rem', textAlign: 'right' }}><button type="submit" className="btn-primary">Створити замовлення</button></div>
         </form>
       </div>
+
+      // Додайте це поле у форму
+<div className="form-group">
+    <label>Email клієнта</label>
+    <input 
+        type="email" 
+        name="clientEmail" 
+        value={form.clientEmail} 
+        onChange={handleChange} 
+        placeholder="ivanvasilchooc235@gmail.com"
+    />
+</div>
       <style>{`
         .message {
           background: #4c5c96;
