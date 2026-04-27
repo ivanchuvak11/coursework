@@ -10,6 +10,8 @@ export default function OrdersList() {
   const [sortField, setSortField] = useState('id');
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [editingField, setEditingField] = useState(null);
+  const [editValue, setEditValue] = useState('');
 
   const statuses = ['прийнято', 'діагностика', 'ремонт', 'виконано', 'видано'];
 
@@ -28,7 +30,7 @@ export default function OrdersList() {
     }
   };
 
-  const updateStatus = async (id, newStatus, phone, clientName) => {
+  const updateStatus = async (id, newStatus, phone, clientName, clientEmail) => {
     try {
       await axios.put(`http://localhost:5000/api/orders/${id}/status`, { status: newStatus });
       try {
@@ -37,6 +39,7 @@ export default function OrdersList() {
           orderId: id,
           status: newStatus,
           clientName,
+          clientEmail,
         });
       } catch (smsError) {
         console.log('SMS не відправлено');
@@ -45,6 +48,29 @@ export default function OrdersList() {
     } catch (error) {
       alert('Помилка оновлення статусу');
     }
+  };
+
+  // Функція оновлення даних клієнта
+  const updateClientField = async (clientId, field, value) => {
+    try {
+      await axios.put(`http://localhost:5000/api/clients/${clientId}`, {
+        [field]: value
+      });
+      setEditingField(null);
+      setEditValue('');
+      fetchOrders();
+      if (selectedOrder) {
+        setSelectedOrder({ ...selectedOrder, [field]: value });
+      }
+    } catch (error) {
+      console.error('Помилка оновлення:', error);
+      alert('Помилка оновлення даних');
+    }
+  };
+
+  const handleEditClick = (field, currentValue) => {
+    setEditingField(field);
+    setEditValue(currentValue || '');
   };
 
   const getStatusColor = (status) => {
@@ -86,7 +112,7 @@ export default function OrdersList() {
     if (sortField === 'id') {
       aVal = Number(aVal);
       bVal = Number(bVal);
-    } else if (sortField === 'full_name' || sortField === 'phone') {
+    } else if (sortField === 'full_name' || sortField === 'phone' || sortField === 'email') {
       aVal = String(aVal || '').toLowerCase();
       bVal = String(bVal || '').toLowerCase();
     } else if (sortField === 'device') {
@@ -136,6 +162,7 @@ export default function OrdersList() {
                 <th onClick={() => handleSort('id')}>ID {getSortIcon('id')}</th>
                 <th onClick={() => handleSort('full_name')}>Клієнт {getSortIcon('full_name')}</th>
                 <th onClick={() => handleSort('phone')}>Телефон {getSortIcon('phone')}</th>
+                <th onClick={() => handleSort('email')}>Email {getSortIcon('email')}</th>
                 <th onClick={() => handleSort('device')}>Пристрій {getSortIcon('device')}</th>
                 <th onClick={() => handleSort('status')}>Статус {getSortIcon('status')}</th>
                 <th>Дія</th>
@@ -154,6 +181,7 @@ export default function OrdersList() {
                     </span>
                   </td>
                   <td>{order.phone}</td>
+                  <td>{order.email || '—'}</td>
                   <td>{order.brand} {order.model}</td>
                   <td>
                     <span className="status-badge" style={{ backgroundColor: getStatusColor(order.status) }}>
@@ -163,7 +191,7 @@ export default function OrdersList() {
                   <td>
                     <select
                       value={order.status}
-                      onChange={(e) => updateStatus(order.id, e.target.value, order.phone, order.full_name)}
+                      onChange={(e) => updateStatus(order.id, e.target.value, order.phone, order.full_name, order.email)}
                     >
                       {statuses.map((s) => (
                         <option key={s} value={s}>{s}</option>
@@ -177,7 +205,7 @@ export default function OrdersList() {
         </div>
       </div>
 
-      {/* Модальне вікно */}
+      {/* Модальне вікно з редагуванням */}
       {selectedOrder && (
         <div className="modal-overlay" onClick={() => setSelectedOrder(null)}>
           <div className="order-modal" onClick={(e) => e.stopPropagation()}>
@@ -189,9 +217,54 @@ export default function OrdersList() {
               <span className="detail-value">{selectedOrder.full_name}</span>
             </div>
             
+            {/* Редагування телефону */}
             <div className="detail-row">
               <span className="detail-label">Телефон:</span>
-              <span className="detail-value">{selectedOrder.phone}</span>
+              <div className="detail-value">
+                {editingField === 'phone' ? (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      style={{ background: '#0f172a', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: 'white', flex: 1 }}
+                      autoFocus
+                    />
+                    <button onClick={() => updateClientField(selectedOrder.client_id, 'phone', editValue)} style={{ background: '#22c55e', border: 'none', borderRadius: '6px', padding: '4px 12px', color: 'white', cursor: 'pointer' }}>💾</button>
+                    <button onClick={() => setEditingField(null)} style={{ background: '#ef4444', border: 'none', borderRadius: '6px', padding: '4px 12px', color: 'white', cursor: 'pointer' }}>✕</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{selectedOrder.phone}</span>
+                    <button onClick={() => handleEditClick('phone', selectedOrder.phone)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '14px' }}>✏️</button>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Редагування email */}
+            <div className="detail-row">
+              <span className="detail-label">Email:</span>
+              <div className="detail-value">
+                {editingField === 'email' ? (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="email"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      style={{ background: '#0f172a', border: '1px solid #475569', borderRadius: '6px', padding: '6px 10px', color: 'white', flex: 1 }}
+                      autoFocus
+                    />
+                    <button onClick={() => updateClientField(selectedOrder.client_id, 'email', editValue)} style={{ background: '#22c55e', border: 'none', borderRadius: '6px', padding: '4px 12px', color: 'white', cursor: 'pointer' }}>💾</button>
+                    <button onClick={() => setEditingField(null)} style={{ background: '#ef4444', border: 'none', borderRadius: '6px', padding: '4px 12px', color: 'white', cursor: 'pointer' }}>✕</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{selectedOrder.email || '—'}</span>
+                    <button onClick={() => handleEditClick('email', selectedOrder.email || '')} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '14px' }}>✏️</button>
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="detail-row">
@@ -340,7 +413,7 @@ export default function OrdersList() {
           margin-bottom: 12px;
         }
         .detail-label {
-          width: 120px;
+          width: 100px;
           font-weight: 600;
           color: #94a3b8;
         }
@@ -370,3 +443,25 @@ export default function OrdersList() {
     </div>
   );
 }
+
+const updateClientField = async (clientId, field, value) => {
+    console.log('clientId:', clientId);  // Подивіться, що тут
+    if (!clientId) {
+        alert('Помилка: ID клієнта не знайдено');
+        return;
+    }
+    try {
+        await axios.put(`http://localhost:5000/api/clients/${clientId}`, { [field]: value });
+        setEditingField(null);
+        setEditValue('');
+        fetchOrders();
+        if (selectedOrder) {
+            setSelectedOrder({ ...selectedOrder, [field]: value });
+        }
+        alert('Дані оновлено!');
+    } catch (error) {
+        console.error('Помилка:', error);
+        alert('Помилка оновлення даних: ' + (error.response?.data?.error || error.message));
+    }
+};
+

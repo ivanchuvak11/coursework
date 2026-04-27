@@ -102,7 +102,7 @@ app.get('/api/orders', authMiddleware, async (req, res) => {
     try {
         const result = await pool.query(`
             SELECT o.id, o.status, o.repair_cost, o.total_cost, o.created_at,
-                   c.full_name, c.phone, c.email, d.device_type, d.brand, d.model, d.issue_description
+                   c.full_name, c.phone, c.email, d.device_type, d.brand, d.model, d.issue_description, c.id as client_id
             FROM orders o
             JOIN devices d ON o.device_id = d.id
             JOIN clients c ON d.client_id = c.id
@@ -293,6 +293,80 @@ app.post('/api/orders', authMiddleware, async (req, res) => {
         [clientName, clientPhone, clientEmail]
     );
     // ...
+});
+
+app.put('/api/clients/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { phone, email } = req.body;
+
+  try {
+    const updates = [];
+    const values = [];
+    
+    if (phone !== undefined) {
+      updates.push(`phone = $${values.length + 1}`);
+      values.push(phone);
+    }
+    if (email !== undefined) {
+      updates.push(`email = $${values.length + 1}`);
+      values.push(email);
+    }
+    
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Немає даних' });
+    }
+    
+    values.push(id);
+    const query = `UPDATE clients SET ${updates.join(', ')} WHERE id = $${values.length} RETURNING *`;
+    const result = await pool.query(query, values);
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ========== ОНОВЛЕННЯ КЛІЄНТА ==========
+app.put('/api/clients/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const { phone, email } = req.body;
+
+    console.log(`Оновлення клієнта #${id}:`, { phone, email });
+
+    try {
+        // Перевіряємо чи існує клієнт
+        const checkClient = await pool.query('SELECT id FROM clients WHERE id = $1', [id]);
+        if (checkClient.rows.length === 0) {
+            return res.status(404).json({ error: 'Клієнта не знайдено' });
+        }
+
+        // Будуємо динамічний запит
+        const updates = [];
+        const values = [];
+
+        if (phone !== undefined) {
+            updates.push(`phone = $${values.length + 1}`);
+            values.push(phone);
+        }
+        if (email !== undefined) {
+            updates.push(`email = $${values.length + 1}`);
+            values.push(email);
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ error: 'Немає даних для оновлення' });
+        }
+
+        const query = `UPDATE clients SET ${updates.join(', ')}, updated_at = NOW() WHERE id = $${values.length + 1} RETURNING *`;
+        values.push(id);
+
+        const result = await pool.query(query, values);
+        console.log('Оновлено:', result.rows[0]);
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Помилка оновлення клієнта:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ========== ЗАПУСК ==========
