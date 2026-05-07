@@ -49,7 +49,7 @@ export default function NewOrderForm() {
     <div className="parts-page">
       <div className="glass-container">
         <div className="page-header">
-          <h2>➕ Нове замовлення</h2>
+          <h2>Нове замовлення</h2>
           <p>Заповніть форму для реєстрації ремонту</p>
         </div>
 

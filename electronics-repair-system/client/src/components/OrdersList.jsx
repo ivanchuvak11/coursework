@@ -411,15 +411,18 @@ export default function OrdersList() {
         .detail-row {
           display: flex;
           margin-bottom: 12px;
+          text-align: left;
         }
         .detail-label {
           width: 100px;
           font-weight: 600;
           color: #94a3b8;
+          text-align: left;
         }
         .detail-value {
           flex: 1;
           color: #f1f5f9;
+          text-align: left;
         }
         .detail-row.description {
           flex-direction: column;
