@@ -19,16 +19,17 @@ export default function OrdersList() {
     fetchOrders();
   }, []);
 
-  const fetchOrders = async () => {
+const fetchOrders = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/orders');
-      setOrders(res.data);
-      setLoading(false);
+        const res = await axios.get('http://localhost:5000/api/orders');
+        console.log('Отримані дані:', res.data); // Подивитися в консолі
+        setOrders(res.data);
+        setLoading(false);
     } catch (error) {
-      console.error('Помилка:', error);
-      setLoading(false);
+        console.error('Помилка:', error);
+        setLoading(false);
     }
-  };
+};
 
   const updateStatus = async (id, newStatus, phone, clientName, clientEmail) => {
     try {
@@ -448,23 +449,37 @@ export default function OrdersList() {
 }
 
 const updateClientField = async (clientId, field, value) => {
-    console.log('clientId:', clientId);  // Подивіться, що тут
+    console.log('Оновлення:', { clientId, field, value }); // Перевірка
+    
     if (!clientId) {
         alert('Помилка: ID клієнта не знайдено');
         return;
     }
+    
     try {
-        await axios.put(`http://localhost:5000/api/clients/${clientId}`, { [field]: value });
-        setEditingField(null);
-        setEditValue('');
-        fetchOrders();
-        if (selectedOrder) {
-            setSelectedOrder({ ...selectedOrder, [field]: value });
+        const response = await axios.put(`http://localhost:5000/api/clients/${clientId}`, {
+            [field]: value
+        });
+        
+        console.log('Відповідь сервера:', response.data);
+        
+        if (response.data) {
+            setEditingField(null);
+            setEditValue('');
+            // Оновлюємо список замовлень
+            await fetchOrders();
+            
+            // Оновлюємо відкрите модальне вікно
+            if (selectedOrder) {
+                setSelectedOrder({
+                    ...selectedOrder,
+                    [field]: value
+                });
+            }
+            alert('Дані оновлено!');
         }
-        alert('Дані оновлено!');
     } catch (error) {
         console.error('Помилка:', error);
         alert('Помилка оновлення даних: ' + (error.response?.data?.error || error.message));
     }
 };
-
