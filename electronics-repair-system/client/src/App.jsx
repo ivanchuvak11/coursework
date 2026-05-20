@@ -14,6 +14,7 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.documentElement.dataset.theme = localStorage.getItem('theme') || 'light';
     const token = localStorage.getItem('token');
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;

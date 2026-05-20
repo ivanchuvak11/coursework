@@ -1,214 +1,160 @@
-/* Глобальний фон (встановлюється окремо в body) */
-
-/* Стилі для всіх сторінок (крім логіну) */
 .dark-page,
 .orders-page,
 .parts-page,
 .new-order-page {
+  min-height: calc(100vh - 64px);
+  padding: 28px 24px;
   width: 100%;
-  min-height: calc(100vh - 70px);
-  padding: 2rem;
-  background: transparent;
 }
 
-/* Основний контейнер з прозорістю, як у футері */
 .glass-container {
-  background: rgba(46, 49, 65, 0.7);      /* той самий колір, що у футера */
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  padding: 22px;
+  text-align: left;
 }
 
-/* Заголовки сторінок */
 .page-header {
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  padding-bottom: 0.75rem;
-}
-.page-header h2 {
-  font-size: 1.6rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-.page-header p {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.9rem;
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 22px;
 }
 
-/* Фільтри (пошук, селект) */
+.page-header h2 {
+  color: var(--text-strong);
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 4px;
+}
+
+.page-header p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
 .filters-row {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
   flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
 }
+
 .filters-row input,
-.filters-row select {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.5rem;
-  padding: 0.7rem 1rem;
-  color: white;
-  font-size: 0.9rem;
+.filters-row select,
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  padding: 10px 12px;
 }
+
 .filters-row input {
   flex: 1;
-  min-width: 200px;
-}
-.filters-row select {
-  background: rgba(46, 49, 65, 0.8);
+  min-width: 240px;
 }
 
-/* Таблиця (скляний ефект) */
+.filters-row input:focus,
+.filters-row select:focus,
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--accent-border);
+  outline: 3px solid var(--accent-ring);
+}
+
 .table-responsive {
-  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
   overflow-x: auto;
-  background: rgba(46, 49, 65, 0.7);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.data-table th {
-  text-align: left;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  font-weight: 700;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-}
-.data-table td {
-  padding: 0.8rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-.data-table tr:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-/* Бейдж статусу */
 .status-badge {
-  display: inline-block;
-  padding: 0.2rem 0.8rem;
-  border-radius: 2rem;
-  font-size: 0.75rem;
-  font-weight: 600;
+  border-radius: 999px;
   color: white;
+  display: inline-block;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 4px 10px;
 }
 
-/* Форми */
 .form-card {
-  background: rgba(46, 49, 65, 0.7);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
 }
+
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.2rem;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
+
 .form-group label {
+  color: var(--text-strong);
   display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.4rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.82rem;
+  font-weight: 800;
+  margin-bottom: 7px;
 }
+
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.5rem;
-  padding: 0.7rem;
-  color: white;
-}
-.btn-primary {
-  background: #4c5c96;
-  border: none;
-  padding: 0.7rem 1.5rem;
-  border-radius: 0.5rem;
-  color: white;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.btn-primary:hover {
-  background: #5c6ca6;
 }
 
-/* Картки для деталей */
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+.btn-primary {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 10px 16px;
+  transition: background 0.2s, transform 0.2s;
 }
-.data-card {
-  background: rgba(46, 49, 65, 0.7);
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  padding: 1.2rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
 }
 
 .loading {
+  color: var(--text-muted);
+  padding: 48px;
   text-align: center;
-  padding: 3rem;
-  color: rgba(255, 255, 255, 0.7);
 }
 
-/* ЗНИЩИТИ ВСІ ЛІНІЇ НА ВСІХ СТОРІНКАХ */
-*,
-*::before,
-*::after {
-  border-top: none !important;
-  border-bottom: none !important;
-  border-left: none !important;
-  border-right: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  text-decoration: none !important;
-}
+@media (max-width: 640px) {
+  .orders-page,
+  .parts-page,
+  .new-order-page {
+    padding: 18px 14px;
+  }
 
-/* Окремо для таблиць */
-table,
-tr,
-td,
-th,
-tbody,
-thead {
-  border: none !important;
-}
+  .glass-container {
+    padding: 16px;
+  }
 
-/* Окремо для контейнерів */
-div,
-section,
-header,
-footer,
-main,
-article {
-  border: none !important;
-}
-
-/* Якщо лінії від background-image */
-.page-header::after,
-.page-header::before,
-.glass-container::after,
-.glass-container::before {
-  display: none !important;
-  content: none !important;
+  .page-header {
+    display: block;
+  }
 }

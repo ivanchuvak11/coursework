@@ -1,8 +1,10 @@
 .form-message {
-  background: #4c5c96;
+  background: var(--accent-soft);
   border-radius: 8px;
-  margin-bottom: 1rem;
-  padding: 0.8rem;
+  color: var(--accent);
+  font-weight: 800;
+  margin-bottom: 16px;
+  padding: 12px;
   text-align: center;
 }
 
@@ -11,6 +13,6 @@
 }
 
 .form-actions {
-  margin-top: 1.5rem;
+  margin-top: 20px;
   text-align: right;
 }

@@ -1,176 +1,158 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import {
+  BarChart3,
+  Bell,
+  CircleDollarSign,
+  ClipboardList,
+  HelpCircle,
+  Menu,
+  MessageSquare,
+  Moon,
+  Package,
+  Search,
+  Settings,
+  Sun,
+  Users,
+} from 'lucide-react';
 import '../styles/Layout.css';
 
-const Layout = ({ children, user, onLogout }) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showContacts, setShowContacts] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
-  const location = useLocation();
+const BRAND_NAME = 'Самарт лайф';
 
-  const navItems = [
-    { path: '/', label: 'Замовлення' },
-    { path: '/new-order', label: 'Нове замовлення' },
-    { path: '/parts', label: 'Деталі' }
-  ];
+const mainNavItems = [
+  { path: '/', label: 'Замовлення', icon: ClipboardList },
+  { path: '/parts', label: 'Склад', icon: Package },
+  { path: '#clients', label: 'Клієнти', icon: Users },
+  { path: '#reports', label: 'Звіти', icon: BarChart3 },
+  { path: '#finance', label: 'Фінанси', icon: CircleDollarSign },
+  { path: '#settings', label: 'Налаштування', icon: Settings },
+];
+
+const summaryItems = [
+  { label: 'Нове замовлення', value: 12, className: 'summary-blue' },
+  { label: 'Діагностика', value: 8, className: 'summary-gray' },
+  { label: 'Ремонт', value: 15, className: 'summary-orange' },
+  { label: 'Виконано', value: 23, className: 'summary-green' },
+];
+
+function SidebarLink({ item, isActive, onClick }) {
+  const className = `sidebar-link ${isActive ? 'active' : ''}`;
+  const Icon = item.icon;
+
+  if (item.path.startsWith('#')) {
+    return (
+      <button className={className} type="button" onClick={onClick}>
+        <Icon className="sidebar-icon" size={22} strokeWidth={1.8} />
+        <span>{item.label}</span>
+      </button>
+    );
+  }
 
   return (
-    <div className="app-container">
-      <header className="header">
-        <div className="header-content">
-          <div className="logo-area">
-            <div className="logo-placeholder">
-              <img src="/images/logo.png" alt="Logo" className="logo-img" />
-            </div>
-            <span className="logo-text">REPAIR<span>MASTER</span></span>
-          </div>
+    <Link className={className} to={item.path} onClick={onClick}>
+      <Icon className="sidebar-icon" size={22} strokeWidth={1.8} />
+      <span>{item.label}</span>
+    </Link>
+  );
+}
 
-          <nav className="desktop-nav">
-            {navItems.map(item => (
-              <Link key={item.path} to={item.path} className={location.pathname === item.path ? 'active' : ''}>
-                {item.label}
-              </Link>
+const Layout = ({ children, user, onLogout }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const location = useLocation();
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'));
+  };
+
+  const handleSearch = (event) => {
+    window.dispatchEvent(new CustomEvent('app-search', { detail: event.target.value }));
+  };
+
+  return (
+    <div className="app-shell">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <Link to="/" className="brand">
+          <span className="brand-main">Самарт</span>
+          <span className="brand-sub">лайф</span>
+        </Link>
+
+        <nav className="sidebar-nav">
+          {mainNavItems.map((item) => (
+            <SidebarLink
+              key={item.label}
+              item={item}
+              isActive={item.path === location.pathname}
+              onClick={() => setSidebarOpen(false)}
+            />
+          ))}
+        </nav>
+
+        <div className="sidebar-card">
+          <strong>Сьогодні</strong>
+          <span>24 травня 2024</span>
+          <div className="summary-list">
+            {summaryItems.map((item) => (
+              <div className="summary-item" key={item.label}>
+                <span className={`summary-dot ${item.className}`}></span>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </div>
             ))}
-          </nav>
-
-          <div className="user-profile">
-            <div className="user-avatar">
-              <img src="/images/avatar.png" alt="Avatar" className="avatar-img" />
-            </div>
-            <span className="user-name">{user?.username}</span>
-            <button onClick={onLogout} className="logout-btn">Вийти</button>
-          </div>
-
-          <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>☰</button>
-        </div>
-
-        {mobileMenuOpen && (
-          <div className="mobile-nav">
-            {navItems.map(item => (
-              <Link key={item.path} to={item.path} onClick={() => setMobileMenuOpen(false)}>
-                {item.label}
-              </Link>
-            ))}
-            <button onClick={onLogout} className="mobile-logout-btn">Вийти</button>
-          </div>
-        )}
-      </header>
-
-      <main className="main-content">
-        <div className="content-wrapper">{children}</div>
-      </main>
-
-      <footer className="footer">
-        <div className="footer-content">
-          <span>© REPAIRMASTER. Всі права захищені.</span>
-          <div className="footer-links">
-            <a href="#" onClick={(e) => { e.preventDefault(); setShowContacts(true); }}>Контакти</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); setShowAbout(true); }}>Про систему</a>
           </div>
         </div>
-      </footer>
 
-      {/* МОДАЛЬНЕ ВІКНО "КОНТАКТИ" */}
-      {showContacts && (
-        <div className="modal-overlay" onClick={() => setShowContacts(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowContacts(false)}>✕</button>
-            <h3>📞 Наші контакти</h3>
-            <div className="contact-info">
-              <p><strong>📱 Телефони:</strong></p>
-              <p>+38 (099) 123-45-67</p>
-              <p>+38 (067) 234-56-78</p>
-              <p>+38 (093) 345-67-89</p>
-            </div>
-            <div className="contact-info">
-              <p><strong>✉️ Email:</strong></p>
-              <p>info@repairmaster.ua</p>
-              <p>support@repairmaster.ua</p>
-            </div>
-            <div className="contact-info">
-              <p><strong>🏢 Адреса:</strong></p>
-              <p>м. Київ, вул. Ремонтна, 15</p>
-            </div>
-            <div className="contact-info">
-              <p><strong>⏰ Графік роботи:</strong></p>
-              <p>Пн-Пт: 9:00 - 19:00</p>
-              <p>Сб: 10:00 - 16:00</p>
-              <p>Нд: вихідний</p>
+        <button className="help-card" type="button">
+          <HelpCircle className="sidebar-icon" size={22} strokeWidth={1.8} />
+          <span>Допомога</span>
+        </button>
+      </aside>
+
+      {sidebarOpen && <button className="sidebar-backdrop" type="button" onClick={() => setSidebarOpen(false)} aria-label="Закрити меню" />}
+
+      <div className="app-main">
+        <header className="topbar">
+          <button className="menu-button" type="button" onClick={() => setSidebarOpen(true)} aria-label="Відкрити меню">
+            <Menu size={22} strokeWidth={1.9} />
+          </button>
+
+          <div className="topbar-search">
+            <Search size={20} strokeWidth={1.8} />
+            <input type="search" placeholder="Пошук замовлення, клієнта, пристрою..." onChange={handleSearch} />
+            <kbd>Ctrl + K</kbd>
+          </div>
+
+          <div className="topbar-actions">
+            <button className="icon-button" type="button" aria-label="Сповіщення">
+              <Bell size={20} strokeWidth={1.8} />
+            </button>
+            <button className="icon-button" type="button" aria-label="Повідомлення">
+              <MessageSquare size={20} strokeWidth={1.8} />
+            </button>
+            <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label="Змінити тему">
+              <span>{theme === 'light' ? <Moon size={18} strokeWidth={1.9} /> : <Sun size={18} strokeWidth={1.9} />}</span>
+              <strong>{theme === 'light' ? 'Темна' : 'Світла'}</strong>
+            </button>
+            <div className="profile-menu">
+              <img src="/images/avatar.png" alt="" />
+              <div>
+                <strong>{user?.username || 'Майстер'}</strong>
+                <span>Адміністратор</span>
+              </div>
+              <button type="button" onClick={onLogout} aria-label="Вийти">
+                ˅
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        </header>
 
-{/* МОДАЛЬНЕ ВІКНО "КОНТАКТИ" */}
-{showContacts && (
-  <div className="modal-overlay" onClick={() => setShowContacts(false)}>
-    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-      <button className="modal-close" onClick={() => setShowContacts(false)}>✕</button>
-      <h3>📞 Наші контакти</h3>
-      <div className="modal-scroll">  {/* ← ДОДАТИ ЦЮ ОБГОРТКУ */}
-        <div className="contact-info">
-          <p><strong>📱 Телефони:</strong></p>
-          <p>+38 (099) 123-45-67</p>
-          <p>+38 (067) 234-56-78</p>
-          <p>+38 (093) 345-67-89</p>
-        </div>
-        <div className="contact-info">
-          <p><strong>✉️ Email:</strong></p>
-          <p>info@repairmaster.ua</p>
-          <p>support@repairmaster.ua</p>
-        </div>
-        <div className="contact-info">
-          <p><strong>🏢 Адреса:</strong></p>
-          <p>м. Київ, вул. Ремонтна, 15</p>
-        </div>
-        <div className="contact-info">
-          <p><strong>⏰ Графік роботи:</strong></p>
-          <p>Пн-Пт: 9:00 - 19:00</p>
-          <p>Сб: 10:00 - 16:00</p>
-          <p>Нд: вихідний</p>
-        </div>
+        <main className="workspace">{children}</main>
       </div>
-    </div>
-  </div>
-)}
-
-{/* МОДАЛЬНЕ ВІКНО "ПРО НАС" */}
-{showAbout && (
-  <div className="modal-overlay" onClick={() => setShowAbout(false)}>
-    <div className="modal-content about-modal" onClick={(e) => e.stopPropagation()}>
-      <button className="modal-close" onClick={() => setShowAbout(false)}>✕</button>
-      <h3>ℹ️ Про систему</h3>
-      <div className="modal-scroll">  {/* ← ДОДАТИ ЦЮ ОБГОРТКУ */}
-        <div className="about-info">
-          <p><strong>REPAIRMASTER</strong> – це сучасна система управління ремонтною майстернею електроніки.</p>
-        </div>
-        <div className="about-info">
-          <p><strong>🎯 Призначення системи:</strong></p>
-          <p>Автоматизація роботи ремонтної майстерні, облік замовлень, контроль статусів ремонту, управління складом запчастин та комунікація з клієнтами.</p>
-        </div>
-        <div className="about-info">
-          <p><strong>✅ Можливості:</strong></p>
-          <ul>
-            <li>📋 Реєстрація та відстеження замовлень на ремонт</li>
-            <li>📊 Контроль статусу ремонту (прийнято, діагностика, ремонт, виконано)</li>
-            <li>🔩 Облік використаних деталей та складу</li>
-            <li>📱 SMS-сповіщення клієнтів про зміну статусу</li>
-            <li>👥 Розмежування прав доступу (адмін, майстер, менеджер)</li>
-            <li>📈 Звітність та аналітика</li>
-          </ul>
-        </div>
-        <div className="about-info">
-          <p><strong>👨‍💻 Для кого:</strong></p>
-          <p>Для ремонтних майстерень, сервісних центрів, приватних майстрів з ремонту електроніки.</p>
-        </div>
-        <div className="about-info">
-          <p><strong>🛠️ Технології:</strong></p>
-          <p>React + Node.js + Express + PostgreSQL + JWT авторизація</p>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
     </div>
   );
 };

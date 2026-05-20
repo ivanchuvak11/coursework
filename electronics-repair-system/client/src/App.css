@@ -4,7 +4,8 @@
 
 .loading-container {
   align-items: center;
-  color: #ffffff;
+  background: var(--app-bg);
+  color: var(--text);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -13,9 +14,9 @@
 
 .spinner {
   animation: spin 0.8s linear infinite;
-  border: 3px solid rgba(255, 255, 255, 0.2);
+  border: 3px solid var(--border);
   border-radius: 50%;
-  border-top-color: #ffffff;
+  border-top-color: var(--accent);
   height: 36px;
   width: 36px;
 }

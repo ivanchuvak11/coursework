@@ -1,432 +1,366 @@
-/* ========== ГЛОБАЛЬНІ СКИДАННЯ ========== */
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
-html, body, #root {
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 100% !important;
-  overflow-x: hidden !important;
+html,
+body,
+#root {
+  min-height: 100%;
 }
 
 body {
-  background-color: #2e3141;
-  background-image: url('/images/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  font-family: 'Source Sans Pro', 'Segoe UI', Helvetica, sans-serif;
-  font-weight: 300;
-  line-height: 1.65;
-  color: #ffffff;
-}
-
-/* ========== ХЕДЕР (НА ВСЮ ШИРИНУ, ЗМЕНШЕНА ВИСОТА) ========== */
-.header {
-  background: rgba(46, 49, 65, 0.85) !important;
-  backdrop-filter: blur(10px) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
-  width: 100vw !important;
-  position: relative !important;
-  left: 0 !important;
-  right: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  box-sizing: border-box !important;
-}
-
-.header-content {
-  max-width: 100%;
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-  height: 2.8rem;  /* ЗМЕНШЕНО висоту (було 3.5rem) */
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-sizing: border-box;
-}
-
-/* ========== ЛОГОТИП (ЛІВОРУЧ) ========== */
-.logo-area {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.logo-placeholder {
-  width: 28px;   /* ЗМЕНШЕНО */
-  height: 28px;  /* ЗМЕНШЕНО */
-  background: rgba(255, 255, 255, 0.125);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.logo-text {
-  font-family: 'Raleway', sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  font-size: 0.8rem;  /* ЗМЕНШЕНО */
-  text-transform: uppercase;
-}
-
-.logo-text span {
-  font-weight: 200;
-}
-
-/* ========== НАВІГАЦІЯ (ПРАВОРУЧ) ========== */
-.desktop-nav {
-  display: flex;
-  gap: 0.3rem;
-  margin-left: auto; /* притискає до правого краю */
-  margin-right: 1rem;
-}
-
-.desktop-nav a {
-  font-family: 'Raleway', sans-serif;
-  font-size: 0.7rem;  /* ЗМЕНШЕНО */
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: #fff;
-  padding: 0.4rem 0.8rem;  /* ЗМЕНШЕНО */
-  border-radius: 5px;
-  transition: background-color 0.2s;
-}
-
-.desktop-nav a:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.desktop-nav a.active {
-  background-color: #4c5c96;
-}
-
-/* ========== ПРОФІЛЬ КОРИСТУВАЧА (КРАЙНІЙ ПРАВОРУЧ) ========== */
-.user-profile {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.user-avatar {
-  width: 28px;   /* ЗМЕНШЕНО */
-  height: 28px;  /* ЗМЕНШЕНО */
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.user-name {
-  font-size: 0.75rem;  /* ЗМЕНШЕНО */
-  font-weight: 600;
-}
-
-.logout-btn {
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-family: 'Raleway', sans-serif;
-  font-size: 0.65rem;  /* ЗМЕНШЕНО */
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  padding: 0.3rem 0.6rem;  /* ЗМЕНШЕНО */
-  border-radius: 5px;
-  transition: background-color 0.2s;
-}
-
-.logout-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* ========== МОБІЛЬНЕ МЕНЮ ========== */
-.mobile-menu-btn {
-  display: none;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.3rem;
-  cursor: pointer;
-}
-
-.mobile-nav {
-  display: none;
-  flex-direction: column;
-  background-color: #353849;
-  padding: 0.8rem;
-  border-top: 2px solid rgba(255, 255, 255, 0.125);
-}
-
-.mobile-nav a,
-.mobile-logout-btn {
-  padding: 0.6rem;
-  color: white;
-  text-decoration: none;
-  font-family: 'Raleway', sans-serif;
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  border-radius: 5px;
-}
-
-.mobile-logout-btn {
-  background: none;
-  border: none;
-  text-align: left;
-}
-
-/* ========== ОСНОВНИЙ КОНТЕНТ ========== */
-.main-content {
-  flex: 1;
-  width: 100%;
-  max-width: 100%;
+  background: var(--app-bg);
+  color: var(--text);
+  font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.5;
   margin: 0;
-  padding: 0;
 }
 
-/* ========== ФУТЕР (НА ВСЮ ШИРИНУ) ========== */
-.footer {
-  background: rgba(46, 49, 65, 0.7) !important;
-  backdrop-filter: blur(10px) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-  width: 100vw !important;
-  position: relative !important;
-  left: 0 !important;
-  right: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  box-sizing: border-box !important;
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
-.footer-content {
-  max-width: 100%;
-  width: 100%;
-  margin: 0 auto;
-  padding: 0.8rem 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.5);
-  box-sizing: border-box;
+.app-shell {
+  background: var(--app-bg);
+  color: var(--text);
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
 }
 
-.footer-links {
-  display: flex;
-  gap: 1.2rem;
-}
-
-.footer-links a {
-  color: rgba(255, 255, 255, 0.5);
-  text-decoration: none;
-  border-bottom: 1px dotted rgba(255, 255, 255, 0.3);
-}
-
-/* ========== АДАПТИВНІСТЬ ========== */
-@media (max-width: 768px) {
-  .desktop-nav,
-  .user-profile {
-    display: none;
-  }
-
-  .mobile-menu-btn {
-    display: block;
-  }
-
-  .mobile-nav {
-    display: flex;
-  }
-
-  .main-content {
-    padding: 0;
-  }
-
-  .header-content,
-  .footer-content {
-    padding: 0 1rem;
-  }
-}
-
-/* ========== КОНТЕЙНЕР ДЛЯ ГНУЧКОСТІ ========== */
-.app-container {
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  width: 100%;
-}
-
-/* ========== МОДАЛЬНІ ВІКНА ========== */
-.modal-overlay {
-  position: fixed;
+  padding: 26px 20px 18px;
+  position: sticky;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.35);  /* СВІТЛЕ ЗАТЕМНЕННЯ */
-  backdrop-filter: blur(3px);
-  display: flex;
+}
+
+.brand {
+  color: var(--text-strong);
+  display: inline-flex;
+  font-size: 1.45rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  margin-bottom: 34px;
+  text-decoration: none;
+}
+
+.brand-main {
+  color: var(--accent);
+}
+
+.brand-sub {
+  color: var(--text-strong);
+}
+
+.sidebar-nav {
+  display: grid;
+  gap: 10px;
+}
+
+.sidebar-link {
   align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-  box-sizing: border-box;
-}
-
-.modal-content {
-  background: rgba(46, 49, 65, 0.95);  /* НАПІВПРОЗОРИЙ ФОН */
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  width: 100%;
-  max-width: 450px;
-  max-height: 85vh;
-  position: relative;
-  animation: modalFadeIn 0.2s ease;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-}
-
-/* Для вікна "Про нас" трохи ширше */
-.about-modal {
-  max-width: 550px;
-}
-
-/* Стилізація скролбара */
-.modal-scroll {
-  overflow-y: auto;
-  padding: 0;
-}
-
-.modal-scroll::-webkit-scrollbar {
-  width: 5px;
-}
-
-.modal-scroll::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  margin: 8px 0;
-}
-
-.modal-scroll::-webkit-scrollbar-thumb {
-  background: #4c5c96;
-  border-radius: 10px;
-}
-
-.modal-scroll::-webkit-scrollbar-thumb:hover {
-  background: #5c6ca6;
-}
-
-/* Заголовок */
-.modal-content h3 {
-  font-family: 'Raleway', sans-serif;
-  font-size: 1.2rem;
-  text-align: center;
-  padding: 1rem 1rem 0.5rem;
-  margin: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0;
-}
-
-/* Кнопка закриття */
-.modal-close {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  background: none;
+  background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 1.5rem;
+  border-radius: 8px;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: color 0.2s;
-  z-index: 10;
+  display: flex;
+  gap: 14px;
+  min-height: 48px;
+  padding: 0 14px;
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+  width: 100%;
 }
 
-.modal-close:hover {
-  color: #fff;
+.sidebar-link:hover {
+  background: var(--surface-alt);
+  color: var(--text-strong);
 }
 
-/* Контент */
-.contact-info,
-.about-info {
-  padding: 0.8rem 1.2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+.sidebar-link.active {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
 }
 
-.contact-info:last-child,
-.about-info:last-child {
-  border-bottom: none;
-  padding-bottom: 1.2rem;
+.sidebar-icon {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  stroke: currentColor;
+  width: 22px;
 }
 
-.contact-info p,
-.about-info p {
-  margin: 0.3rem 0;
+.sidebar-card,
+.help-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-card {
+  margin-top: auto;
+  padding: 18px;
+}
+
+.sidebar-card > strong {
+  color: var(--text-strong);
+  display: block;
+  font-size: 0.9rem;
+}
+
+.sidebar-card > span {
+  color: var(--text-muted);
+  display: block;
   font-size: 0.85rem;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.85);
+  margin: 2px 0 16px;
 }
 
-.contact-info strong,
-.about-info strong {
-  color: #4c5c96;
+.summary-list {
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 13px;
+  padding-top: 14px;
+}
+
+.summary-item {
+  align-items: center;
+  color: var(--text-muted);
+  display: grid;
   font-size: 0.85rem;
+  gap: 8px;
+  grid-template-columns: auto 1fr auto;
 }
 
-.about-info ul {
-  margin: 0.3rem 0;
-  padding-left: 1.2rem;
+.summary-item strong {
+  color: var(--text-strong);
 }
 
-.about-info li {
-  margin: 0.3rem 0;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.85);
+.summary-dot {
+  border-radius: 999px;
+  height: 8px;
+  width: 8px;
 }
 
-/* Анімація */
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
+.summary-blue {
+  background: var(--accent);
+}
+
+.summary-gray {
+  background: #a1a1aa;
+}
+
+.summary-orange {
+  background: #d97706;
+}
+
+.summary-green {
+  background: #16a34a;
+}
+
+.help-card {
+  align-items: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  margin-top: 86px;
+  min-height: 56px;
+  padding: 0 16px;
+}
+
+.app-main {
+  display: grid;
+  grid-template-rows: 72px minmax(0, 1fr);
+  min-width: 0;
+}
+
+.topbar {
+  align-items: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 18px;
+  padding: 0 24px;
+}
+
+.menu-button,
+.icon-button {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-strong);
+  cursor: pointer;
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.menu-button:hover,
+.icon-button:hover {
+  background: var(--surface-alt);
+}
+
+.topbar-search {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  max-width: 680px;
+  min-width: 220px;
+  padding: 0 12px;
+}
+
+.topbar-search input {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  flex: 1;
+  height: 42px;
+  outline: none;
+}
+
+.topbar-search kbd {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 3px 8px;
+}
+
+.topbar-actions {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.theme-toggle {
+  align-items: center;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+}
+
+.theme-toggle span {
+  align-items: center;
+  color: var(--accent);
+  display: inline-flex;
+}
+
+.profile-menu {
+  align-items: center;
+  border-left: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  padding-left: 16px;
+}
+
+.profile-menu img {
+  border-radius: 999px;
+  height: 40px;
+  object-fit: cover;
+  width: 40px;
+}
+
+.profile-menu strong,
+.profile-menu span {
+  display: block;
+}
+
+.profile-menu strong {
+  color: var(--text-strong);
+  font-size: 0.9rem;
+}
+
+.profile-menu span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.profile-menu button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.workspace {
+  min-width: 0;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 1180px) {
+  .app-shell {
+    grid-template-columns: 1fr;
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
+
+  .sidebar {
+    bottom: 0;
+    box-shadow: var(--shadow-lg);
+    left: 0;
+    position: fixed;
+    top: 0;
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    width: 280px;
+    z-index: 50;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    background: rgba(15, 23, 42, 0.42);
+    border: none;
+    display: block;
+    inset: 0;
+    position: fixed;
+    z-index: 40;
   }
 }
 
-@media (max-width: 600px) {
-  .modal-content {
-    max-width: 95%;
-    border-radius: 16px;
+@media (max-width: 760px) {
+  .topbar {
+    padding: 0 12px;
   }
-  
-  .contact-info p,
-  .about-info p,
-  .about-info li {
-    font-size: 0.75rem;
+
+  .topbar-search kbd,
+  .icon-button,
+  .profile-menu div,
+  .theme-toggle strong {
+    display: none;
   }
-  
-  .modal-content h3 {
-    font-size: 1rem;
+
+  .profile-menu {
+    padding-left: 8px;
   }
 }
