@@ -41,7 +41,7 @@ function SidebarLink({ item, isActive, onClick }) {
 
   if (item.path.startsWith('#')) {
     return (
-      <button className={className} type="button" onClick={() => onClick(item.dialog)}>
+      <button className={className} type="button" onClick={() => onClick(item.dialog)} title={item.label}>
         <Icon className="sidebar-icon" size={22} strokeWidth={1.8} />
         <span>{item.label}</span>
       </button>
@@ -49,7 +49,7 @@ function SidebarLink({ item, isActive, onClick }) {
   }
 
   return (
-    <Link className={className} to={item.path} onClick={onClick}>
+    <Link className={className} to={item.path} onClick={onClick} title={item.label}>
       <Icon className="sidebar-icon" size={22} strokeWidth={1.8} />
       <span>{item.label}</span>
     </Link>
@@ -58,6 +58,7 @@ function SidebarLink({ item, isActive, onClick }) {
 
 const Layout = ({ children, user, onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [activeDialog, setActiveDialog] = useState(null);
   const location = useLocation();
@@ -67,6 +68,10 @@ const Layout = ({ children, user, onLogout }) => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
+
   const toggleTheme = () => {
     setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'));
   };
@@ -75,15 +80,25 @@ const Layout = ({ children, user, onLogout }) => {
     window.dispatchEvent(new CustomEvent('app-search', { detail: event.target.value }));
   };
 
+  const toggleSidebar = () => {
+    if (window.matchMedia('(max-width: 1180px)').matches) {
+      setSidebarOpen(true);
+      return;
+    }
+
+    setSidebarCollapsed((isCollapsed) => !isCollapsed);
+  };
+
   const openDialog = (title) => {
     setActiveDialog(title);
     setSidebarOpen(false);
   };
 
   return (
-    <div className="app-shell">
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+    <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <Link to="/" className="brand">
+          <span className="brand-short">СЛ</span>
           <span className="brand-main">Самарт</span>
           <span className="brand-sub">лайф</span>
         </Link>
@@ -123,7 +138,7 @@ const Layout = ({ children, user, onLogout }) => {
 
       <div className="app-main">
         <header className="topbar">
-          <button className="menu-button" type="button" onClick={() => setSidebarOpen(true)} aria-label="Відкрити меню">
+          <button className="menu-button" type="button" onClick={toggleSidebar} aria-label="Згорнути або відкрити меню">
             <Menu size={22} strokeWidth={1.9} />
           </button>
 

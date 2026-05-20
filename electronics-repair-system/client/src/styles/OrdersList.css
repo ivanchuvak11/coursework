@@ -538,6 +538,10 @@
   color: var(--danger);
 }
 
+.print-receipt {
+  display: none;
+}
+
 @media (max-width: 1320px) {
   .repair-dashboard {
     grid-template-columns: minmax(0, 1fr);
@@ -588,5 +592,147 @@
   .details-list > div {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+    size: A4 portrait;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .print-receipt,
+  .print-receipt * {
+    visibility: visible !important;
+  }
+
+  .print-receipt {
+    color: #111827;
+    display: block;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    left: 0;
+    line-height: 1.45;
+    position: absolute;
+    top: 0;
+    width: 100%;
+  }
+
+  .receipt-header {
+    align-items: flex-start;
+    border-bottom: 2px solid #111827;
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 14px;
+  }
+
+  .receipt-header h1 {
+    color: #0f5ee8;
+    font-size: 24px;
+    margin: 0 0 4px;
+  }
+
+  .receipt-header p,
+  .receipt-number span,
+  .receipt-meta span,
+  .receipt-grid span,
+  .receipt-signatures p {
+    color: #4b5563;
+    margin: 0;
+  }
+
+  .receipt-number {
+    text-align: right;
+  }
+
+  .receipt-number strong {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  .receipt-meta {
+    border-bottom: 1px solid #d1d5db;
+    display: grid;
+    gap: 20px;
+    grid-template-columns: 1fr 1fr;
+    padding: 14px 0;
+  }
+
+  .receipt-meta div,
+  .receipt-grid {
+    display: grid;
+    gap: 4px;
+  }
+
+  .receipt-section {
+    border-bottom: 1px solid #d1d5db;
+    padding: 14px 0;
+  }
+
+  .receipt-section h2 {
+    color: #111827;
+    font-size: 14px;
+    margin: 0 0 10px;
+  }
+
+  .receipt-grid {
+    grid-template-columns: 130px 1fr;
+  }
+
+  .receipt-table {
+    border-collapse: collapse;
+    margin-top: 16px;
+    width: 100%;
+  }
+
+  .receipt-table th,
+  .receipt-table td {
+    border: 1px solid #d1d5db;
+    padding: 9px 10px;
+    text-align: left;
+  }
+
+  .receipt-table th {
+    background: #f3f4f6;
+    color: #111827;
+  }
+
+  .receipt-total {
+    align-items: center;
+    border-bottom: 1px solid #d1d5db;
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0;
+  }
+
+  .receipt-total span {
+    color: #4b5563;
+  }
+
+  .receipt-signatures {
+    display: grid;
+    gap: 50px;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 54px;
+  }
+
+  .receipt-signatures span {
+    border-bottom: 1px solid #111827;
+    display: block;
+    height: 28px;
+  }
+
+  .receipt-signatures p {
+    margin-top: 8px;
+    text-align: center;
   }
 }

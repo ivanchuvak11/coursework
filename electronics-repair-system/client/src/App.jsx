@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 import Login from './components/Login';
 import OrdersList from './components/OrdersList';
 import NewOrderForm from './components/NewOrderForm';
 import PartsInventory from './components/PartsInventory';
 import './App.css';
+
+function AuthenticatedApp({ user, onLogout }) {
+  const location = useLocation();
+
+  return (
+    <ErrorBoundary resetKey={location.pathname}>
+      <Layout user={user} onLogout={onLogout}>
+        <Routes>
+          <Route path="/" element={<OrdersList />} />
+          <Route path="/new-order" element={<NewOrderForm />} />
+          <Route path="/parts" element={<PartsInventory />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Layout>
+    </ErrorBoundary>
+  );
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -70,14 +88,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Layout user={user} onLogout={handleLogout}>
-        <Routes>
-          <Route path="/" element={<OrdersList />} />
-          <Route path="/new-order" element={<NewOrderForm />} />
-          <Route path="/parts" element={<PartsInventory />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Layout>
+      <AuthenticatedApp user={user} onLogout={handleLogout} />
     </BrowserRouter>
   );
 }

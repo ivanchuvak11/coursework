@@ -90,6 +90,93 @@ function EditableField({ isEditing, type = 'text', value, editValue, onEdit, onC
   );
 }
 
+function PrintReceipt({ order }) {
+  const status = getStatusMeta(order.status);
+
+  return (
+    <article className="print-receipt" aria-hidden="true">
+      <header className="receipt-header">
+        <div>
+          <h1>Самарт лайф</h1>
+          <p>Сервісний центр ремонту електроніки</p>
+        </div>
+        <div className="receipt-number">
+          <strong>Квитанція</strong>
+          <span>Замовлення № {getOrderNumber(order.id)}</span>
+        </div>
+      </header>
+
+      <section className="receipt-meta">
+        <div>
+          <span>Дата</span>
+          <strong>{formatDate(order.created_at)}</strong>
+        </div>
+        <div>
+          <span>Статус</span>
+          <strong>{status.label}</strong>
+        </div>
+      </section>
+
+      <section className="receipt-section">
+        <h2>Дані клієнта</h2>
+        <div className="receipt-grid">
+          <span>Клієнт</span>
+          <strong>{order.full_name || '—'}</strong>
+          <span>Телефон</span>
+          <strong>{order.phone || '—'}</strong>
+          <span>Email</span>
+          <strong>{order.email || '—'}</strong>
+        </div>
+      </section>
+
+      <section className="receipt-section">
+        <h2>Пристрій</h2>
+        <div className="receipt-grid">
+          <span>Пристрій</span>
+          <strong>{getDeviceName(order)}</strong>
+          <span>Тип</span>
+          <strong>{order.device_type || '—'}</strong>
+          <span>Несправність</span>
+          <strong>{order.issue_description || 'Не вказано'}</strong>
+        </div>
+      </section>
+
+      <table className="receipt-table">
+        <thead>
+          <tr>
+            <th>Послуга</th>
+            <th>Кількість</th>
+            <th>Вартість</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Діагностика та прийом пристрою</td>
+            <td>1</td>
+            <td>За домовленістю</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div className="receipt-total">
+        <span>Орієнтовна вартість</span>
+        <strong>За результатами діагностики</strong>
+      </div>
+
+      <footer className="receipt-signatures">
+        <div>
+          <span></span>
+          <p>Підпис клієнта</p>
+        </div>
+        <div>
+          <span></span>
+          <p>Підпис майстра</p>
+        </div>
+      </footer>
+    </article>
+  );
+}
+
 export default function OrdersList() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -517,6 +604,8 @@ export default function OrdersList() {
           <button className="danger-action" type="button" onClick={cancelOrder}>Скасувати замовлення</button>
         </section>
       </aside>}
+
+      <PrintReceipt order={activeOrder} />
     </div>
   );
 }

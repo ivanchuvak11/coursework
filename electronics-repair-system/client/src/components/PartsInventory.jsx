@@ -60,7 +60,7 @@ export default function PartsInventory() {
   };
 
   const updateQuantity = async (id, currentQuantity, delta) => {
-    const quantity = currentQuantity + delta;
+    const quantity = Number(currentQuantity || 0) + delta;
 
     if (quantity < 0) {
       alert('Кількість не може бути від’ємною');
@@ -191,7 +191,7 @@ export default function PartsInventory() {
                       </button>
                     </div>
                   </td>
-                  <td>{Number(part.price).toLocaleString('uk-UA')} ₴</td>
+                  <td>{Number(part.price || 0).toLocaleString('uk-UA')} ₴</td>
                 </tr>
               ))}
             </tbody>

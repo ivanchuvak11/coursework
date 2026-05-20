@@ -29,6 +29,11 @@ textarea {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   min-height: 100vh;
+  transition: grid-template-columns 0.2s ease;
+}
+
+.app-shell.sidebar-collapsed {
+  grid-template-columns: 86px minmax(0, 1fr);
 }
 
 .sidebar {
@@ -40,6 +45,15 @@ textarea {
   padding: 26px 20px 18px;
   position: sticky;
   top: 0;
+  transition: padding 0.2s ease;
+  width: 280px;
+}
+
+.sidebar.collapsed {
+  align-items: center;
+  padding-left: 12px;
+  padding-right: 12px;
+  width: 86px;
 }
 
 .brand {
@@ -50,6 +64,26 @@ textarea {
   letter-spacing: 0;
   margin-bottom: 34px;
   text-decoration: none;
+}
+
+.brand-short {
+  color: var(--accent);
+  display: none;
+}
+
+.sidebar.collapsed .brand {
+  justify-content: center;
+  width: 100%;
+}
+
+.sidebar.collapsed .brand-main,
+.sidebar.collapsed .brand-sub {
+  display: none;
+}
+
+.sidebar.collapsed .brand-short {
+  display: inline;
+  font-size: 1.3rem;
 }
 
 .brand-main {
@@ -82,6 +116,19 @@ textarea {
   width: 100%;
 }
 
+.sidebar.collapsed .sidebar-nav {
+  width: 100%;
+}
+
+.sidebar.collapsed .sidebar-link {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar.collapsed .sidebar-link span {
+  display: none;
+}
+
 .sidebar-link:hover {
   background: var(--surface-alt);
   color: var(--text-strong);
@@ -112,6 +159,10 @@ textarea {
 .sidebar-card {
   margin-top: auto;
   padding: 18px;
+}
+
+.sidebar.collapsed .sidebar-card {
+  display: none;
 }
 
 .sidebar-card > strong {
@@ -180,6 +231,17 @@ textarea {
   padding: 0 16px;
 }
 
+.sidebar.collapsed .help-card {
+  justify-content: center;
+  margin-top: auto;
+  padding: 0;
+  width: 48px;
+}
+
+.sidebar.collapsed .help-card span {
+  display: none;
+}
+
 .app-main {
   display: grid;
   grid-template-rows: 72px minmax(0, 1fr);
@@ -212,6 +274,11 @@ textarea {
 .menu-button:hover,
 .icon-button:hover {
   background: var(--surface-alt);
+}
+
+.sidebar-collapsed .menu-button {
+  background: var(--surface-alt);
+  color: var(--accent);
 }
 
 .topbar-search {
@@ -376,6 +443,10 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .app-shell.sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
   .sidebar {
     bottom: 0;
     box-shadow: var(--shadow-lg);
@@ -386,6 +457,49 @@ textarea {
     transition: transform 0.2s;
     width: 280px;
     z-index: 50;
+  }
+
+  .sidebar.collapsed {
+    align-items: stretch;
+    padding: 26px 20px 18px;
+    width: 280px;
+  }
+
+  .sidebar.collapsed .brand {
+    justify-content: flex-start;
+  }
+
+  .sidebar.collapsed .brand-short {
+    display: none;
+  }
+
+  .sidebar.collapsed .brand-main,
+  .sidebar.collapsed .brand-sub {
+    display: inline;
+  }
+
+  .sidebar.collapsed .sidebar-link {
+    justify-content: flex-start;
+    padding: 0 14px;
+  }
+
+  .sidebar.collapsed .sidebar-link span {
+    display: inline;
+  }
+
+  .sidebar.collapsed .sidebar-card {
+    display: block;
+  }
+
+  .sidebar.collapsed .help-card {
+    justify-content: flex-start;
+    margin-top: 86px;
+    padding: 0 16px;
+    width: 100%;
+  }
+
+  .sidebar.collapsed .help-card span {
+    display: inline;
   }
 
   .sidebar.open {
