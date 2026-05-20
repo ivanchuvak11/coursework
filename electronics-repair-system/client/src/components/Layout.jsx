@@ -22,10 +22,10 @@ const BRAND_NAME = 'Самарт лайф';
 const mainNavItems = [
   { path: '/', label: 'Замовлення', icon: ClipboardList },
   { path: '/parts', label: 'Склад', icon: Package },
-  { path: '#clients', label: 'Клієнти', icon: Users },
-  { path: '#reports', label: 'Звіти', icon: BarChart3 },
-  { path: '#finance', label: 'Фінанси', icon: CircleDollarSign },
-  { path: '#settings', label: 'Налаштування', icon: Settings },
+  { path: '#clients', label: 'Клієнти', icon: Users, dialog: 'Клієнти' },
+  { path: '#reports', label: 'Звіти', icon: BarChart3, dialog: 'Звіти' },
+  { path: '#finance', label: 'Фінанси', icon: CircleDollarSign, dialog: 'Фінанси' },
+  { path: '#settings', label: 'Налаштування', icon: Settings, dialog: 'Налаштування' },
 ];
 
 const summaryItems = [
@@ -41,7 +41,7 @@ function SidebarLink({ item, isActive, onClick }) {
 
   if (item.path.startsWith('#')) {
     return (
-      <button className={className} type="button" onClick={onClick}>
+      <button className={className} type="button" onClick={() => onClick(item.dialog)}>
         <Icon className="sidebar-icon" size={22} strokeWidth={1.8} />
         <span>{item.label}</span>
       </button>
@@ -59,6 +59,7 @@ function SidebarLink({ item, isActive, onClick }) {
 const Layout = ({ children, user, onLogout }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const [activeDialog, setActiveDialog] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -72,6 +73,11 @@ const Layout = ({ children, user, onLogout }) => {
 
   const handleSearch = (event) => {
     window.dispatchEvent(new CustomEvent('app-search', { detail: event.target.value }));
+  };
+
+  const openDialog = (title) => {
+    setActiveDialog(title);
+    setSidebarOpen(false);
   };
 
   return (
@@ -88,7 +94,7 @@ const Layout = ({ children, user, onLogout }) => {
               key={item.label}
               item={item}
               isActive={item.path === location.pathname}
-              onClick={() => setSidebarOpen(false)}
+              onClick={(dialog) => (dialog ? openDialog(dialog) : setSidebarOpen(false))}
             />
           ))}
         </nav>
@@ -107,7 +113,7 @@ const Layout = ({ children, user, onLogout }) => {
           </div>
         </div>
 
-        <button className="help-card" type="button">
+        <button className="help-card" type="button" onClick={() => openDialog('Допомога')}>
           <HelpCircle className="sidebar-icon" size={22} strokeWidth={1.8} />
           <span>Допомога</span>
         </button>
@@ -128,10 +134,10 @@ const Layout = ({ children, user, onLogout }) => {
           </div>
 
           <div className="topbar-actions">
-            <button className="icon-button" type="button" aria-label="Сповіщення">
+            <button className="icon-button" type="button" aria-label="Сповіщення" onClick={() => openDialog('Сповіщення')}>
               <Bell size={20} strokeWidth={1.8} />
             </button>
-            <button className="icon-button" type="button" aria-label="Повідомлення">
+            <button className="icon-button" type="button" aria-label="Повідомлення" onClick={() => openDialog('Повідомлення')}>
               <MessageSquare size={20} strokeWidth={1.8} />
             </button>
             <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label="Змінити тему">
@@ -153,6 +159,25 @@ const Layout = ({ children, user, onLogout }) => {
 
         <main className="workspace">{children}</main>
       </div>
+
+      {activeDialog && (
+        <div className="modal-overlay" onClick={() => setActiveDialog(null)}>
+          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
+            <button className="modal-close" type="button" onClick={() => setActiveDialog(null)} aria-label="Закрити">
+              ×
+            </button>
+            <h3>{activeDialog}</h3>
+            <div className="modal-scroll">
+              <div className="about-info">
+                <p>{activeDialog === 'Сповіщення' ? 'Нових критичних сповіщень немає.' : null}</p>
+                <p>{activeDialog === 'Повідомлення' ? 'Непрочитаних повідомлень немає.' : null}</p>
+                <p>{activeDialog === 'Допомога' ? 'Для роботи з системою оберіть розділ у меню або скористайтесь пошуком у верхній панелі.' : null}</p>
+                <p>{!['Сповіщення', 'Повідомлення', 'Допомога'].includes(activeDialog) ? `Розділ "${activeDialog}" підготовлений у меню. Його можна розширити окремою сторінкою, коли буде потрібна логіка та дані.` : null}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

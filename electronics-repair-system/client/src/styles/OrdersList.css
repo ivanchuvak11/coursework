@@ -5,6 +5,10 @@
   padding: 0;
 }
 
+.repair-dashboard.details-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .orders-main-panel {
   min-width: 0;
   padding: 24px 32px 32px;
@@ -95,6 +99,51 @@
 
 .filter-button {
   margin-left: auto;
+}
+
+.filter-button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.filter-panel {
+  align-items: end;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(180px, 1fr)) auto;
+  margin: -10px 0 18px;
+  padding: 14px;
+}
+
+.filter-panel label {
+  color: var(--text-muted);
+  display: grid;
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.filter-panel select {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.filter-panel button {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-strong);
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 40px;
+  padding: 0 14px;
 }
 
 .orders-table-card {
@@ -235,6 +284,11 @@
   cursor: pointer;
   height: 34px;
   width: 34px;
+}
+
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .pagination button.active {
@@ -474,6 +528,12 @@
   min-height: 48px;
 }
 
+.details-actions .primary-action {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
 .details-actions .danger-action {
   color: var(--danger);
 }
@@ -510,6 +570,10 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .filter-panel {
+    grid-template-columns: 1fr;
   }
 
   .stock-grid {

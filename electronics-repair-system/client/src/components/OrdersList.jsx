@@ -100,6 +100,10 @@ export default function OrdersList() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [editingField, setEditingField] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [pageSize, setPageSize] = useState(13);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showDetails, setShowDetails] = useState(true);
 
   const fetchOrders = async () => {
     try {
@@ -124,6 +128,10 @@ export default function OrdersList() {
     window.addEventListener('app-search', handleSearch);
     return () => window.removeEventListener('app-search', handleSearch);
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, pageSize, search]);
 
   const updateStatus = async (order, status) => {
     try {
@@ -221,15 +229,34 @@ export default function OrdersList() {
       });
   }, [filterStatus, orders, search, sortField, sortOrder]);
 
-  const activeOrder = selectedOrder || sortedOrders[0] || orders[0] || FALLBACK_ORDER;
+  const totalPages = Math.max(1, Math.ceil(sortedOrders.length / pageSize));
+  const paginatedOrders = sortedOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const visibleFrom = sortedOrders.length ? (currentPage - 1) * pageSize + 1 : 0;
+  const visibleTo = Math.min(currentPage * pageSize, sortedOrders.length);
+  const activeOrder = selectedOrder || paginatedOrders[0] || sortedOrders[0] || orders[0] || FALLBACK_ORDER;
   const activeStatus = getStatusMeta(activeOrder.status);
+
+  const cancelOrder = () => {
+    if (!activeOrder?.id || !confirm(`Скасувати замовлення ${getOrderNumber(activeOrder.id)}?`)) return;
+    setOrders((currentOrders) => currentOrders.filter((order) => order.id !== activeOrder.id));
+    setSelectedOrder(null);
+    alert('Замовлення прибрано зі списку в поточній сесії. Для постійного видалення потрібен DELETE endpoint на сервері.');
+  };
+
+  const printReceipt = () => {
+    window.print();
+  };
+
+  const focusActiveOrder = () => {
+    document.querySelector('.orders-table-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   if (loading) {
     return <div className="loading">Завантаження...</div>;
   }
 
   return (
-    <div className="orders-page repair-dashboard">
+    <div className={`orders-page repair-dashboard ${showDetails ? '' : 'details-collapsed'}`}>
       <section className="orders-main-panel">
         <div className="orders-toolbar">
           <h1>Замовлення</h1>
@@ -254,10 +281,39 @@ export default function OrdersList() {
               <span>{statusCounts[status.value] || 0}</span>
             </button>
           ))}
-          <button className="filter-button" type="button">
+          <button className={`filter-button ${filterOpen ? 'active' : ''}`} type="button" onClick={() => setFilterOpen((isOpen) => !isOpen)}>
             ⌯ Фільтр
           </button>
         </div>
+
+        {filterOpen && (
+          <div className="filter-panel">
+            <label>
+              Статус
+              <select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value)}>
+                <option value="all">Усі статуси</option>
+                {ORDER_STATUSES.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Сортувати
+              <select value={sortField} onChange={(event) => setSortField(event.target.value)}>
+                <option value="id">Номер</option>
+                <option value="created_at">Дата</option>
+                <option value="full_name">Клієнт</option>
+                <option value="device">Пристрій</option>
+                <option value="status">Статус</option>
+              </select>
+            </label>
+            <button type="button" onClick={() => { setFilterStatus('all'); setSortField('id'); setSortOrder('desc'); }}>
+              Скинути
+            </button>
+          </div>
+        )}
 
         <div className="table-responsive orders-table-card">
           <table className="orders-table">
@@ -274,12 +330,12 @@ export default function OrdersList() {
               </tr>
             </thead>
             <tbody>
-              {sortedOrders.map((order, index) => {
+              {paginatedOrders.map((order, index) => {
                 const status = getStatusMeta(order.status);
                 const isSelected = activeOrder.id === order.id;
 
                 return (
-                  <tr className={isSelected ? 'selected' : ''} key={order.id} onClick={() => setSelectedOrder(order)}>
+                  <tr className={isSelected ? 'selected' : ''} key={order.id} onClick={() => { setSelectedOrder(order); setShowDetails(true); }}>
                     <td>
                       <button className="order-number" type="button">
                         {getOrderNumber(order.id)}
@@ -292,7 +348,7 @@ export default function OrdersList() {
                     <td>
                       <span className={`status-badge ${status.className}`}>{status.label}</span>
                     </td>
-                    <td>{index % 3 === 0 ? '—' : index % 2 === 0 ? 'Олег Т.' : 'Андрій К.'}</td>
+                    <td>{((currentPage - 1) * pageSize + index) % 3 === 0 ? '—' : index % 2 === 0 ? 'Олег Т.' : 'Андрій К.'}</td>
                     <td>
                       <select
                         value={order.status}
@@ -315,20 +371,20 @@ export default function OrdersList() {
         </div>
 
         <div className="orders-footer-row">
-          <span>Показано {sortedOrders.length ? `1-${sortedOrders.length}` : '0'} з {orders.length}</span>
+          <span>Показано {visibleFrom}-{visibleTo} з {sortedOrders.length}</span>
           <div className="pagination">
-            <button type="button">‹</button>
-            <button className="active" type="button">1</button>
-            <button type="button">2</button>
-            <button type="button">3</button>
-            <button type="button">4</button>
-            <button type="button">5</button>
-            <button type="button">›</button>
+            <button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}>‹</button>
+            {Array.from({ length: totalPages }, (_, index) => index + 1).slice(0, 5).map((page) => (
+              <button className={currentPage === page ? 'active' : ''} key={page} type="button" onClick={() => setCurrentPage(page)}>
+                {page}
+              </button>
+            ))}
+            <button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}>›</button>
           </div>
-          <select aria-label="Кількість на сторінці">
-            <option>13 / стор.</option>
-            <option>25 / стор.</option>
-            <option>50 / стор.</option>
+          <select value={pageSize} aria-label="Кількість на сторінці" onChange={(event) => setPageSize(Number(event.target.value))}>
+            <option value={13}>13 / стор.</option>
+            <option value={25}>25 / стор.</option>
+            <option value={50}>50 / стор.</option>
           </select>
         </div>
 
@@ -353,10 +409,10 @@ export default function OrdersList() {
         </section>
       </section>
 
-      <aside className="order-details-panel">
+      {showDetails && <aside className="order-details-panel">
         <div className="details-header">
           <h2>Деталі замовлення</h2>
-          <button type="button" aria-label="Закрити">×</button>
+          <button type="button" aria-label="Закрити" onClick={() => setShowDetails(false)}>×</button>
         </div>
 
         <div className="details-title-block">
@@ -377,7 +433,7 @@ export default function OrdersList() {
         <section className="details-section">
           <div className="details-section-title">
             <h4>Клієнт</h4>
-            <button type="button">✎</button>
+            <button type="button" onClick={() => handleEditClick('phone', activeOrder.phone)}>✎</button>
           </div>
           <div className="details-list">
             <div>
@@ -419,7 +475,7 @@ export default function OrdersList() {
         <section className="details-section">
           <div className="details-section-title">
             <h4>Пристрій</h4>
-            <button type="button">✎</button>
+            <button type="button" onClick={() => alert('Редагування пристрою потребує endpoint для оновлення devices на сервері.')}>✎</button>
           </div>
           <div className="details-list">
             <div>
@@ -456,11 +512,11 @@ export default function OrdersList() {
 
         <section className="details-actions">
           <h4>Дії</h4>
-          <Link className="primary-action" to="/new-order">Перейти до замовлення</Link>
-          <button type="button">Друк квитанції</button>
-          <button className="danger-action" type="button">Скасувати замовлення</button>
+          <button className="primary-action" type="button" onClick={focusActiveOrder}>Перейти до замовлення</button>
+          <button type="button" onClick={printReceipt}>Друк квитанції</button>
+          <button className="danger-action" type="button" onClick={cancelOrder}>Скасувати замовлення</button>
         </section>
-      </aside>
+      </aside>}
     </div>
   );
 }
