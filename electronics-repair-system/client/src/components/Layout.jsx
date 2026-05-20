@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import './Layout.css';
+import '../styles/Layout.css';
 
 const Layout = ({ children, user, onLogout }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

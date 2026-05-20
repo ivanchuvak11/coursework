@@ -1,86 +1,111 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import './SharedDark.css';
+import '../styles/SharedDark.css';
+import '../styles/PartsInventory.css';
+
+const API_URL = 'http://localhost:5000/api';
+
+const INITIAL_PART = {
+  part_name: '',
+  quantity: '',
+  price: '',
+  category: '',
+};
+
+function getPartSortValue(part, field) {
+  if (['id', 'quantity', 'price'].includes(field)) return Number(part[field]);
+  return String(part[field] || '').toLowerCase();
+}
 
 export default function PartsInventory() {
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [newPart, setNewPart] = useState({ part_name: '', quantity: '', price: '', category: '' });
+  const [newPart, setNewPart] = useState(INITIAL_PART);
   const [showForm, setShowForm] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
   const [sortField, setSortField] = useState('id');
   const [sortOrder, setSortOrder] = useState('asc');
 
-  useEffect(() => { fetchParts(); }, []);
-
   const fetchParts = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/parts');
-      setParts(res.data);
-    } catch (error) { console.error(error); }
-    finally { setLoading(false); }
+      const response = await axios.get(`${API_URL}/parts`);
+      setParts(response.data);
+    } catch (error) {
+      console.error('Не вдалося завантажити склад:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addPart = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    fetchParts();
+  }, []);
+
+  const handlePartChange = (field, value) => {
+    setNewPart((part) => ({ ...part, [field]: value }));
+  };
+
+  const addPart = async (event) => {
+    event.preventDefault();
+
     try {
-      await axios.post('http://localhost:5000/api/parts', newPart);
-      fetchParts();
-      setNewPart({ part_name: '', quantity: '', price: '', category: '' });
+      await axios.post(`${API_URL}/parts`, newPart);
+      setNewPart(INITIAL_PART);
       setShowForm(false);
-    } catch (error) { alert('Помилка додавання'); }
+      fetchParts();
+    } catch (error) {
+      console.error('Не вдалося додати деталь:', error);
+      alert('Помилка додавання деталі');
+    }
   };
 
   const updateQuantity = async (id, currentQuantity, delta) => {
-    const newQuantity = currentQuantity + delta;
-    if (newQuantity < 0) {
-      alert('Кількість не може бути від\'ємною');
+    const quantity = currentQuantity + delta;
+
+    if (quantity < 0) {
+      alert('Кількість не може бути від’ємною');
       return;
     }
-    
+
     try {
       setUpdatingId(id);
-      await axios.put(`http://localhost:5000/api/parts/${id}`, { quantity: newQuantity });
-      fetchParts();
+      await axios.put(`${API_URL}/parts/${id}`, { quantity });
+      setParts((currentParts) => currentParts.map((part) => (part.id === id ? { ...part, quantity } : part)));
     } catch (error) {
+      console.error('Не вдалося оновити кількість:', error);
       alert('Помилка оновлення кількості');
     } finally {
       setUpdatingId(null);
     }
   };
 
-  // Сортування
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('asc');
+      setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'));
+      return;
     }
+
+    setSortField(field);
+    setSortOrder('asc');
   };
 
   const getSortIcon = (field) => {
-    if (sortField !== field) return ' ';
+    if (sortField !== field) return '';
     return sortOrder === 'asc' ? '↑' : '↓';
   };
 
-  // Сортування даних
-  const sortedParts = [...parts].sort((a, b) => {
-    let aVal = a[sortField];
-    let bVal = b[sortField];
-    
-    if (sortField === 'id' || sortField === 'quantity' || sortField === 'price') {
-      aVal = Number(aVal);
-      bVal = Number(bVal);
-    } else if (sortField === 'part_name' || sortField === 'category') {
-      aVal = String(aVal || '').toLowerCase();
-      bVal = String(bVal || '').toLowerCase();
-    }
-    
-    if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
-    return 0;
-  });
+  const sortedParts = useMemo(
+    () =>
+      [...parts].sort((a, b) => {
+        const aValue = getPartSortValue(a, sortField);
+        const bValue = getPartSortValue(b, sortField);
+
+        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      }),
+    [parts, sortField, sortOrder],
+  );
 
   if (loading) return <div className="loading">Завантаження...</div>;
 
@@ -92,23 +117,48 @@ export default function PartsInventory() {
           <p>Всього найменувань: {parts.length}</p>
         </div>
 
-        <button 
-          className="btn-primary" 
-          style={{ marginBottom: '1rem' }}
-          onClick={() => setShowForm(!showForm)}
-        >
+        <button className="btn-primary inventory-toggle" type="button" onClick={() => setShowForm((isOpen) => !isOpen)}>
           + Додати деталь
         </button>
 
         {showForm && (
-          <form onSubmit={addPart} className="form-card" style={{ marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              <input type="text" placeholder="Назва" value={newPart.part_name} onChange={(e) => setNewPart({...newPart, part_name: e.target.value})} required style={{ flex: 2 }} />
-              <input type="text" placeholder="Категорія" value={newPart.category} onChange={(e) => setNewPart({...newPart, category: e.target.value})} style={{ flex: 1 }} />
-              <input type="number" placeholder="Кількість" value={newPart.quantity} onChange={(e) => setNewPart({...newPart, quantity: e.target.value})} required style={{ flex: 1 }} />
-              <input type="number" step="0.01" placeholder="Ціна" value={newPart.price} onChange={(e) => setNewPart({...newPart, price: e.target.value})} required style={{ flex: 1 }} />
-              <button type="submit" className="btn-primary">Додати</button>
-              <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Скасувати</button>
+          <form onSubmit={addPart} className="form-card inventory-form">
+            <div className="inventory-form-grid">
+              <input
+                className="inventory-name-input"
+                type="text"
+                placeholder="Назва"
+                value={newPart.part_name}
+                onChange={(event) => handlePartChange('part_name', event.target.value)}
+                required
+              />
+              <input
+                type="text"
+                placeholder="Категорія"
+                value={newPart.category}
+                onChange={(event) => handlePartChange('category', event.target.value)}
+              />
+              <input
+                type="number"
+                placeholder="Кількість"
+                value={newPart.quantity}
+                onChange={(event) => handlePartChange('quantity', event.target.value)}
+                required
+              />
+              <input
+                type="number"
+                step="0.01"
+                placeholder="Ціна"
+                value={newPart.price}
+                onChange={(event) => handlePartChange('price', event.target.value)}
+                required
+              />
+              <button type="submit" className="btn-primary">
+                Додати
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
+                Скасувати
+              </button>
             </div>
           </form>
         )}
@@ -125,93 +175,29 @@ export default function PartsInventory() {
               </tr>
             </thead>
             <tbody>
-              {sortedParts.map(p => (
-                <tr key={p.id}>
-                  <td>{p.id}</td>
-                  <td>{p.part_name}</td>
-                  <td>{p.category || '—'}</td>
+              {sortedParts.map((part) => (
+                <tr key={part.id}>
+                  <td>{part.id}</td>
+                  <td>{part.part_name}</td>
+                  <td>{part.category || '—'}</td>
                   <td>
                     <div className="quantity-control">
-                      <button onClick={() => updateQuantity(p.id, p.quantity, -1)} disabled={updatingId === p.id}>−</button>
-                      <span className={p.quantity < 5 ? 'low-stock' : ''}>{p.quantity}</span>
-                      <button onClick={() => updateQuantity(p.id, p.quantity, 1)} disabled={updatingId === p.id}>+</button>
+                      <button type="button" onClick={() => updateQuantity(part.id, part.quantity, -1)} disabled={updatingId === part.id}>
+                        −
+                      </button>
+                      <span className={part.quantity < 5 ? 'low-stock' : ''}>{part.quantity}</span>
+                      <button type="button" onClick={() => updateQuantity(part.id, part.quantity, 1)} disabled={updatingId === part.id}>
+                        +
+                      </button>
                     </div>
                   </td>
-                  <td>{p.price.toLocaleString('uk-UA')} ₴</td>
+                  <td>{Number(part.price).toLocaleString('uk-UA')} ₴</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
-
-      <style>{`
-        .btn-secondary {
-          background: #4b5563;
-          border: none;
-          padding: 0.5rem 1rem;
-          border-radius: 6px;
-          color: white;
-          cursor: pointer;
-        }
-        .parts-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .parts-table th {
-          text-align: left;
-          padding: 12px 8px;
-          background: rgba(0, 0, 0, 0.3);
-          font-weight: 600;
-          border-bottom: 1px solid rgba(255,255,255,0.1);
-          cursor: pointer;
-        }
-        .parts-table th:hover {
-          background: rgba(255,255,255,0.05);
-        }
-        .parts-table td {
-          text-align: left;
-          padding: 12px 8px;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .quantity-control {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        .quantity-control button {
-          width: 28px;
-          height: 28px;
-          border-radius: 6px;
-          border: none;
-          background: #334155;
-          color: white;
-          font-size: 1rem;
-          font-weight: bold;
-          cursor: pointer;
-        }
-        .quantity-control button:hover {
-          background: #475569;
-        }
-        .quantity-control button:disabled {
-          opacity: 0.5;
-        }
-        .quantity-control span {
-          min-width: 40px;
-          text-align: center;
-          font-weight: 500;
-        }
-        .low-stock {
-          color: #f97316;
-        }
-        input, select {
-          background: rgba(0,0,0,0.3);
-          border: 1px solid rgba(255,255,255,0.2);
-          border-radius: 6px;
-          padding: 8px 12px;
-          color: white;
-        }
-      `}</style>
     </div>
   );
 }

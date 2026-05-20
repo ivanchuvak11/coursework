@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react';
-import './LandingPage.css';
+import '../styles/LandingPage.css';
 
 export default function LandingPage() {
     useEffect(() => {
         // Скрипти для меню
         const handleMenuToggle = () => {
             const body = document.body;
-            const menu = document.getElementById('menu');
             const pageWrapper = document.getElementById('page-wrapper');
             
             if (body.classList.contains('is-menu-visible')) {
@@ -99,19 +98,19 @@ export default function LandingPage() {
                         </section>
 
                         <h3 className="major">Чому обирають нас?</h3>
-                        <div className="row" style={{ marginBottom: '2em' }}>
-                            <div className="col-4" style={{ textAlign: 'center' }}>
-                                <span className="icon solid fa-check-circle" style={{ fontSize: '3em', color: '#4c5c96' }}></span>
+                        <div className="row benefits-row">
+                            <div className="col-4 benefit-item">
+                                <span className="icon solid fa-check-circle benefit-icon"></span>
                                 <h4>Гарантія якості</h4>
                                 <p>6 місяців гарантії на всі види робіт</p>
                             </div>
-                            <div className="col-4" style={{ textAlign: 'center' }}>
-                                <span className="icon solid fa-clock" style={{ fontSize: '3em', color: '#4c5c96' }}></span>
+                            <div className="col-4 benefit-item">
+                                <span className="icon solid fa-clock benefit-icon"></span>
                                 <h4>Швидкий ремонт</h4>
                                 <p>Більшість ремонтів за 1-2 дні</p>
                             </div>
-                            <div className="col-4" style={{ textAlign: 'center' }}>
-                                <span className="icon solid fa-shield-alt" style={{ fontSize: '3em', color: '#4c5c96' }}></span>
+                            <div className="col-4 benefit-item">
+                                <span className="icon solid fa-shield-alt benefit-icon"></span>
                                 <h4>Оригінальні деталі</h4>
                                 <p>Тільки якісні запчастини</p>
                             </div>

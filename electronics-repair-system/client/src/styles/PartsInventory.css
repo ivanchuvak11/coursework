@@ -1,0 +1,106 @@
+.inventory-toggle {
+  margin-bottom: 1rem;
+}
+
+.inventory-form {
+  margin-bottom: 2rem;
+}
+
+.inventory-form-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 2fr repeat(3, minmax(120px, 1fr)) auto auto;
+}
+
+.inventory-form-grid input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  min-width: 0;
+  padding: 8px 12px;
+}
+
+.btn-secondary {
+  background: #4b5563;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+}
+
+.btn-secondary:hover {
+  background: #64748b;
+}
+
+.parts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.parts-table th,
+.parts-table td {
+  padding: 12px 8px;
+  text-align: left;
+}
+
+.parts-table th {
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.parts-table th:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.quantity-control {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.quantity-control button {
+  background: #334155;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  height: 28px;
+  width: 28px;
+}
+
+.quantity-control button:hover {
+  background: #475569;
+}
+
+.quantity-control button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.quantity-control span {
+  font-weight: 500;
+  min-width: 40px;
+  text-align: center;
+}
+
+.low-stock {
+  color: #f97316;
+  font-weight: 700;
+}
+
+@media (max-width: 980px) {
+  .inventory-form-grid {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .inventory-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

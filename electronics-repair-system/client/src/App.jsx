@@ -6,6 +6,7 @@ import Login from './components/Login';
 import OrdersList from './components/OrdersList';
 import NewOrderForm from './components/NewOrderForm';
 import PartsInventory from './components/PartsInventory';
+import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,7 +28,7 @@ function App() {
       const response = await axios.get('http://localhost:5000/api/auth/me');
       setUser(response.data);
       setIsAuthenticated(true);
-    } catch (error) {
+    } catch {
       localStorage.removeItem('token');
       delete axios.defaults.headers.common['Authorization'];
     } finally {
@@ -43,7 +44,9 @@ function App() {
   const handleLogout = async () => {
     try {
       await axios.post('http://localhost:5000/api/auth/logout');
-    } catch (error) {}
+    } catch {
+      console.info('Сесію на сервері вже завершено або сервер недоступний');
+    }
     
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
@@ -53,7 +56,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="loading-container" style={{ height: '100vh' }}>
+      <div className="loading-container full-screen-loader">
         <div className="spinner"></div>
         <p>Завантаження...</p>
       </div>

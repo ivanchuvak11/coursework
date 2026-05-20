@@ -1,0 +1,16 @@
+.form-message {
+  background: #4c5c96;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  padding: 0.8rem;
+  text-align: center;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  margin-top: 1.5rem;
+  text-align: right;
+}
