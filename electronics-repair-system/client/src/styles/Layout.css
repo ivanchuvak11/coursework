@@ -10,8 +10,12 @@ body,
 
 body {
   background: var(--app-bg);
+  background-image: var(--app-bg-image);
+  background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
   color: var(--text);
-  font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-ui);
   line-height: 1.5;
   margin: 0;
 }
@@ -25,6 +29,10 @@ textarea {
 
 .app-shell {
   background: var(--app-bg);
+  background-image: var(--app-bg-image);
+  background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
   color: var(--text);
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -38,6 +46,7 @@ textarea {
 
 .sidebar {
   background: var(--surface);
+  backdrop-filter: blur(18px);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -57,17 +66,26 @@ textarea {
 }
 
 .brand {
+  align-items: center;
   color: var(--text-strong);
   display: inline-flex;
   font-size: 1.45rem;
   font-weight: 900;
+  gap: 0;
   letter-spacing: 0;
   margin-bottom: 34px;
   text-decoration: none;
 }
 
-.brand-short {
-  color: var(--accent);
+.brand-mark {
+  display: none;
+  height: 42px;
+  object-fit: contain;
+  width: 42px;
+}
+
+.brand-main,
+.brand-sub {
   display: none;
 }
 
@@ -81,17 +99,20 @@ textarea {
   display: none;
 }
 
-.sidebar.collapsed .brand-short {
-  display: inline;
-  font-size: 1.3rem;
+.sidebar.collapsed .brand-mark {
+  display: block;
 }
 
 .brand-main {
   color: var(--accent);
+  display: inline;
+  font-family: var(--font-heading);
 }
 
 .brand-sub {
   color: var(--text-strong);
+  display: inline;
+  font-family: var(--font-heading);
 }
 
 .sidebar-nav {
@@ -135,9 +156,9 @@ textarea {
 }
 
 .sidebar-link.active {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
   color: #ffffff;
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+  box-shadow: 0 14px 28px var(--accent-ring);
 }
 
 .sidebar-icon {
@@ -209,15 +230,15 @@ textarea {
 }
 
 .summary-gray {
-  background: #a1a1aa;
+  background: #94a3b8;
 }
 
 .summary-orange {
-  background: #d97706;
+  background: var(--warning);
 }
 
 .summary-green {
-  background: #16a34a;
+  background: var(--success);
 }
 
 .help-card {
@@ -251,6 +272,7 @@ textarea {
 .topbar {
   align-items: center;
   background: var(--surface);
+  backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--border);
   display: flex;
   gap: 18px;
@@ -285,6 +307,7 @@ textarea {
   align-items: center;
   border: 1px solid var(--border);
   border-radius: 8px;
+  background: var(--input-bg);
   color: var(--text-muted);
   display: flex;
   flex: 1;
@@ -327,12 +350,18 @@ textarea {
   color: var(--text);
   cursor: pointer;
   display: inline-flex;
-  gap: 8px;
   height: 40px;
-  padding: 0 14px;
+  justify-content: center;
+  padding: 0;
+  width: 44px;
 }
 
-.theme-toggle span {
+.theme-toggle:hover {
+  background: var(--surface);
+  border-color: var(--accent-border);
+}
+
+.theme-icon {
   align-items: center;
   color: var(--accent);
   display: inline-flex;
@@ -368,12 +397,22 @@ textarea {
   font-size: 0.78rem;
 }
 
-.profile-menu button {
+.logout-button {
+  align-items: center;
   background: transparent;
   border: none;
+  border-radius: 8px;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 1.2rem;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.logout-button:hover {
+  background: var(--surface-alt);
+  color: #dc2626;
 }
 
 .workspace {
@@ -469,7 +508,7 @@ textarea {
     justify-content: flex-start;
   }
 
-  .sidebar.collapsed .brand-short {
+  .sidebar.collapsed .brand-mark {
     display: none;
   }
 

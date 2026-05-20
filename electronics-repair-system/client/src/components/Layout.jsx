@@ -14,6 +14,7 @@ import {
   Settings,
   Sun,
   Users,
+  X,
 } from 'lucide-react';
 import '../styles/Layout.css';
 
@@ -62,6 +63,13 @@ const Layout = ({ children, user, onLogout }) => {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [activeDialog, setActiveDialog] = useState(null);
   const location = useLocation();
+  const todayLabel = new Date()
+    .toLocaleDateString('uk-UA', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+    .replace(' р.', '');
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -98,7 +106,7 @@ const Layout = ({ children, user, onLogout }) => {
     <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <Link to="/" className="brand">
-          <span className="brand-short">СЛ</span>
+          <img className="brand-mark" src="/images/logo.png" alt="" aria-hidden="true" />
           <span className="brand-main">Самарт</span>
           <span className="brand-sub">лайф</span>
         </Link>
@@ -116,7 +124,7 @@ const Layout = ({ children, user, onLogout }) => {
 
         <div className="sidebar-card">
           <strong>Сьогодні</strong>
-          <span>24 травня 2024</span>
+          <span>{todayLabel}</span>
           <div className="summary-list">
             {summaryItems.map((item) => (
               <div className="summary-item" key={item.label}>
@@ -155,9 +163,14 @@ const Layout = ({ children, user, onLogout }) => {
             <button className="icon-button" type="button" aria-label="Повідомлення" onClick={() => openDialog('Повідомлення')}>
               <MessageSquare size={20} strokeWidth={1.8} />
             </button>
-            <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label="Змінити тему">
-              <span>{theme === 'light' ? <Moon size={18} strokeWidth={1.9} /> : <Sun size={18} strokeWidth={1.9} />}</span>
-              <strong>{theme === 'light' ? 'Темна' : 'Світла'}</strong>
+            <button
+              className="theme-toggle"
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'light' ? 'Увімкнути темну тему' : 'Увімкнути світлу тему'}
+              title={theme === 'light' ? 'Темна тема' : 'Світла тема'}
+            >
+              <span className="theme-icon">{theme === 'light' ? <Moon size={19} strokeWidth={1.9} /> : <Sun size={19} strokeWidth={1.9} />}</span>
             </button>
             <div className="profile-menu">
               <img src="/images/avatar.png" alt="" />
@@ -165,8 +178,8 @@ const Layout = ({ children, user, onLogout }) => {
                 <strong>{user?.username || 'Майстер'}</strong>
                 <span>Адміністратор</span>
               </div>
-              <button type="button" onClick={onLogout} aria-label="Вийти">
-                ˅
+              <button className="logout-button" type="button" onClick={onLogout} aria-label="Вийти" title="Вийти">
+                <X size={18} strokeWidth={2} />
               </button>
             </div>
           </div>

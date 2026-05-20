@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { Trash2 } from 'lucide-react';
 import '../styles/SharedDark.css';
 import '../styles/PartsInventory.css';
 
@@ -23,6 +24,7 @@ export default function PartsInventory() {
   const [newPart, setNewPart] = useState(INITIAL_PART);
   const [showForm, setShowForm] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [sortField, setSortField] = useState('id');
   const [sortOrder, setSortOrder] = useState('asc');
 
@@ -76,6 +78,21 @@ export default function PartsInventory() {
       alert('Помилка оновлення кількості');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const deletePart = async (part) => {
+    if (!confirm(`Видалити деталь "${part.part_name}" зі складу?`)) return;
+
+    try {
+      setDeletingId(part.id);
+      await axios.delete(`${API_URL}/parts/${part.id}`);
+      setParts((currentParts) => currentParts.filter((item) => item.id !== part.id));
+    } catch (error) {
+      console.error('Не вдалося видалити деталь:', error);
+      alert(error.response?.data?.error || 'Помилка видалення деталі');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -172,6 +189,7 @@ export default function PartsInventory() {
                 <th onClick={() => handleSort('category')}>Категорія {getSortIcon('category')}</th>
                 <th onClick={() => handleSort('quantity')}>Кількість {getSortIcon('quantity')}</th>
                 <th onClick={() => handleSort('price')}>Ціна (грн) {getSortIcon('price')}</th>
+                <th className="actions-column">Дії</th>
               </tr>
             </thead>
             <tbody>
@@ -192,6 +210,18 @@ export default function PartsInventory() {
                     </div>
                   </td>
                   <td>{Number(part.price || 0).toLocaleString('uk-UA')} ₴</td>
+                  <td>
+                    <button
+                      className="delete-part-button"
+                      type="button"
+                      onClick={() => deletePart(part)}
+                      disabled={deletingId === part.id}
+                      aria-label={`Видалити ${part.part_name}`}
+                      title="Видалити"
+                    >
+                      <Trash2 size={17} strokeWidth={1.9} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

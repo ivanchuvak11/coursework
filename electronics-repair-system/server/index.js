@@ -249,6 +249,58 @@ app.put('/api/orders/:id/status', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Помилка оновлення статусу' });
     }
 });
+
+app.delete('/api/orders/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const orderResult = await client.query(
+            'SELECT id, device_id FROM orders WHERE id = $1 FOR UPDATE',
+            [id]
+        );
+
+        if (orderResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Замовлення не знайдено' });
+        }
+
+        const { device_id } = orderResult.rows[0];
+
+        await client.query(`
+            UPDATE spare_parts AS sp
+            SET quantity = sp.quantity + used_parts.quantity_used
+            FROM (
+                SELECT part_id, SUM(quantity_used)::integer AS quantity_used
+                FROM order_parts
+                WHERE order_id = $1
+                GROUP BY part_id
+            ) AS used_parts
+            WHERE sp.id = used_parts.part_id
+        `, [id]);
+
+        await client.query('DELETE FROM order_parts WHERE order_id = $1', [id]);
+        await client.query('DELETE FROM orders WHERE id = $1', [id]);
+        await client.query(`
+            DELETE FROM devices
+            WHERE id = $1
+              AND NOT EXISTS (
+                SELECT 1 FROM orders WHERE device_id = $1
+              )
+        `, [device_id]);
+
+        await client.query('COMMIT');
+        res.json({ success: true, deletedOrderId: Number(id) });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Помилка видалення замовлення:', err.message);
+        res.status(500).json({ error: 'Помилка видалення замовлення' });
+    } finally {
+        client.release();
+    }
+});
 // ========== ДЕТАЛІ ==========
 app.get('/api/parts', authMiddleware, async (req, res) => {
     try {
@@ -284,6 +336,41 @@ app.put('/api/parts/:id', authMiddleware, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Помилка оновлення деталі' });
+    }
+});
+
+app.delete('/api/parts/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const partResult = await client.query(
+            'SELECT id, part_name FROM spare_parts WHERE id = $1 FOR UPDATE',
+            [id]
+        );
+
+        if (partResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Деталь не знайдена' });
+        }
+
+        const usageResult = await client.query('DELETE FROM order_parts WHERE part_id = $1', [id]);
+        await client.query('DELETE FROM spare_parts WHERE id = $1', [id]);
+
+        await client.query('COMMIT');
+        res.json({
+            success: true,
+            deletedPartId: Number(id),
+            removedOrderLinks: usageResult.rowCount,
+        });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Помилка видалення деталі:', err.message);
+        res.status(500).json({ error: 'Помилка видалення деталі' });
+    } finally {
+        client.release();
     }
 });
 

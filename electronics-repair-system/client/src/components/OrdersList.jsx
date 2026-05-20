@@ -27,13 +27,6 @@ const FALLBACK_ORDER = {
   created_at: '2024-05-24T10:21:00',
 };
 
-const lowStockParts = [
-  { name: 'Дисплей iPhone 13', type: 'OLED', quantity: 2, min: 5, image: '/images/logo.png' },
-  { name: 'Акумулятор iPhone 11', type: 'Li-ion', quantity: 3, min: 5, image: '/images/favicon.png' },
-  { name: 'Роз’єм зарядки USB-C', type: 'Універсальний', quantity: 4, min: 10, image: '/images/logo.png' },
-  { name: 'Вентилятор ноутбука 15.6"', type: 'Універсальний', quantity: 1, min: 5, image: '/images/favicon.png' },
-];
-
 const SORTABLE_TEXT_FIELDS = ['full_name', 'phone', 'email', 'status'];
 
 const getStatusMeta = (status) => ORDER_STATUSES.find((item) => item.value === status) || ORDER_STATUSES[0];
@@ -55,6 +48,17 @@ function formatDate(value) {
 
 function getDeviceName(order) {
   return `${order.brand || ''} ${order.model || ''}`.trim() || 'Не вказано';
+}
+
+function getSerialNumber(order) {
+  const seed = `${order.id || 0}-${order.created_at || ''}-${order.brand || ''}-${order.model || ''}`;
+  let hash = 0;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+
+  return `SL${String(order.id || 0).padStart(4, '0')}${hash.toString(36).toUpperCase().padStart(6, '0').slice(-6)}`;
 }
 
 function getSortValue(order, field) {
@@ -323,11 +327,18 @@ export default function OrdersList() {
   const activeOrder = selectedOrder || paginatedOrders[0] || sortedOrders[0] || orders[0] || FALLBACK_ORDER;
   const activeStatus = getStatusMeta(activeOrder.status);
 
-  const cancelOrder = () => {
+  const cancelOrder = async () => {
     if (!activeOrder?.id || !confirm(`Скасувати замовлення ${getOrderNumber(activeOrder.id)}?`)) return;
-    setOrders((currentOrders) => currentOrders.filter((order) => order.id !== activeOrder.id));
-    setSelectedOrder(null);
-    alert('Замовлення прибрано зі списку в поточній сесії. Для постійного видалення потрібен DELETE endpoint на сервері.');
+
+    try {
+      await axios.delete(`${API_URL}/orders/${activeOrder.id}`);
+      setOrders((currentOrders) => currentOrders.filter((order) => order.id !== activeOrder.id));
+      setSelectedOrder(null);
+      alert('Замовлення повністю видалено з бази даних.');
+    } catch (error) {
+      console.error('Не вдалося видалити замовлення:', error);
+      alert(error.response?.data?.error || 'Помилка видалення замовлення');
+    }
   };
 
   const printReceipt = () => {
@@ -474,26 +485,6 @@ export default function OrdersList() {
             <option value={50}>50 / стор.</option>
           </select>
         </div>
-
-        <section className="stock-panel">
-          <div className="stock-header">
-            <h2>Склад - низький залишок</h2>
-            <Link to="/parts">Весь склад</Link>
-          </div>
-          <div className="stock-grid">
-            {lowStockParts.map((part) => (
-              <article className="stock-card" key={part.name}>
-                <img src={part.image} alt="" />
-                <div>
-                  <h3>{part.name}</h3>
-                  <p>{part.type}</p>
-                  <strong>Залишок: {part.quantity} шт.</strong>
-                  <span>Мін. залишок: {part.min} шт.</span>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
       </section>
 
       {showDetails && <aside className="order-details-panel">
@@ -552,10 +543,6 @@ export default function OrdersList() {
                 onCancel={() => setEditingField(null)}
               />
             </div>
-            <div>
-              <span>Адреса:</span>
-              <strong>м. Київ, вул. Хрещатик, 15</strong>
-            </div>
           </div>
         </section>
 
@@ -571,15 +558,7 @@ export default function OrdersList() {
             </div>
             <div>
               <span>Серійний номер:</span>
-              <strong>DNPD93JQ0D</strong>
-            </div>
-            <div>
-              <span>Колір:</span>
-              <strong>Midnight</strong>
-            </div>
-            <div>
-              <span>Комплектація:</span>
-              <strong>Телефон, кабель</strong>
+              <strong>{getSerialNumber(activeOrder)}</strong>
             </div>
           </div>
         </section>
@@ -589,12 +568,6 @@ export default function OrdersList() {
             <h4>Несправність</h4>
           </div>
           <p className="issue-text">{activeOrder.issue_description || 'Не вказано'}</p>
-          <div className="details-list single">
-            <div>
-              <span>Додатково:</span>
-              <strong>Клієнт не знає причину</strong>
-            </div>
-          </div>
         </section>
 
         <section className="details-actions">

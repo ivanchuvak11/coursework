@@ -9,6 +9,11 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+.repair-dashboard:not(.details-collapsed) .orders-table th:first-child,
+.repair-dashboard:not(.details-collapsed) .orders-table td:first-child {
+  display: none;
+}
+
 .orders-main-panel {
   min-width: 0;
   padding: 24px 32px 32px;
@@ -23,6 +28,7 @@
 
 .orders-toolbar h1 {
   color: var(--text-strong);
+  font-family: var(--font-heading);
   font-size: 1.7rem;
   line-height: 1.2;
   margin: 0;
@@ -31,9 +37,9 @@
 .new-order-button,
 .primary-action {
   align-items: center;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
   border-radius: 8px;
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+  box-shadow: 0 14px 30px var(--accent-ring);
   color: #ffffff;
   display: inline-flex;
   font-weight: 800;
@@ -65,6 +71,7 @@
 .status-tabs button {
   align-items: center;
   background: var(--surface);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
@@ -84,7 +91,7 @@
 }
 
 .status-tabs span {
-  background: var(--surface-alt);
+  background: var(--accent-soft);
   border-radius: 999px;
   color: var(--accent);
   font-size: 0.78rem;
@@ -109,6 +116,7 @@
 .filter-panel {
   align-items: end;
   background: var(--surface);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-radius: 8px;
   display: grid;
@@ -148,8 +156,10 @@
 
 .orders-table-card {
   background: var(--surface);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-radius: 8px;
+  box-shadow: var(--shadow-sm);
   overflow-x: auto;
 }
 
@@ -167,7 +177,7 @@
 }
 
 .orders-table th {
-  background: var(--surface);
+  background: var(--surface-alt);
   color: var(--text-muted);
   cursor: pointer;
   font-size: 0.82rem;
@@ -202,18 +212,18 @@
 }
 
 .status-accepted {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .status-diagnostics {
-  background: #e5e7eb;
-  color: #475569;
+  background: #e0f2fe;
+  color: #0369a1;
 }
 
 .status-repair {
-  background: #ffedd5;
-  color: #c2410c;
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .status-complete {
@@ -227,14 +237,14 @@
 }
 
 :root[data-theme='dark'] .status-accepted {
-  background: rgba(59, 130, 246, 0.18);
-  color: #93c5fd;
+  background: rgba(139, 92, 246, 0.18);
+  color: #c4b5fd;
 }
 
 :root[data-theme='dark'] .status-diagnostics,
 :root[data-theme='dark'] .status-issued {
-  background: rgba(148, 163, 184, 0.16);
-  color: #cbd5e1;
+  background: rgba(56, 189, 248, 0.14);
+  color: #7dd3fc;
 }
 
 :root[data-theme='dark'] .status-repair {
@@ -292,7 +302,7 @@
 }
 
 .pagination button.active {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
   color: #ffffff;
 }
 
@@ -376,6 +386,7 @@
 
 .order-details-panel {
   background: var(--surface);
+  backdrop-filter: blur(18px);
   border-left: 1px solid var(--border);
   min-height: calc(100vh - 72px);
   padding: 24px 28px;
@@ -391,6 +402,7 @@
 
 .details-header h2 {
   color: var(--text-strong);
+  font-family: var(--font-heading);
   font-size: 1.1rem;
   margin: 0;
 }
@@ -412,6 +424,7 @@
 .details-title-block h3 {
   color: var(--text-strong);
   display: inline-block;
+  font-family: var(--font-heading);
   font-size: 1.35rem;
   margin: 0 12px 18px 0;
 }
@@ -454,6 +467,7 @@
 .details-section-title h4,
 .details-actions h4 {
   color: var(--text-strong);
+  font-family: var(--font-heading);
   font-size: 1rem;
   margin: 0;
 }

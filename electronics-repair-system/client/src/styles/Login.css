@@ -1,6 +1,9 @@
 .login-page {
   align-items: center;
   background: var(--app-bg);
+  background-image: var(--app-bg-image);
+  background-position: center;
+  background-size: cover;
   display: flex;
   justify-content: center;
   min-height: 100vh;
@@ -9,6 +12,7 @@
 
 .login-card {
   background: var(--surface);
+  backdrop-filter: blur(18px);
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--shadow-lg);

@@ -9,6 +9,7 @@
 
 .glass-container {
   background: var(--surface);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
@@ -25,6 +26,7 @@
 
 .page-header h2 {
   color: var(--text-strong);
+  font-family: var(--font-heading);
   font-size: 1.55rem;
   font-weight: 800;
   line-height: 1.2;
@@ -73,6 +75,7 @@
 
 .table-responsive {
   background: var(--surface);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow-x: auto;
@@ -89,6 +92,7 @@
 
 .form-card {
   background: var(--surface);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 20px;
@@ -115,7 +119,7 @@
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
   border: none;
   border-radius: 8px;
   color: #ffffff;
@@ -127,7 +131,7 @@
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
   transform: translateY(-1px);
 }
 
