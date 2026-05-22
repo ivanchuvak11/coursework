@@ -121,7 +121,9 @@ function PrintReceipt({ order }) {
     <article className="print-receipt" aria-hidden="true">
       <header className="receipt-header">
         <div>
-          <h1>Смарт лайф</h1>
+          <h1>
+            <span className="receipt-brand-main">Смарт</span><span className="receipt-brand-sub">лайф</span>
+          </h1>
           <p>Сервісний центр ремонту електроніки</p>
         </div>
         <div className="receipt-number">

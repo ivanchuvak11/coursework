@@ -845,9 +845,16 @@
   }
 
   .receipt-header h1 {
-    color: #0f5ee8;
     font-size: 24px;
     margin: 0 0 4px;
+  }
+
+  .receipt-brand-main {
+    color: #0d9488;
+  }
+
+  .receipt-brand-sub {
+    color: #10233f;
   }
 
   .receipt-header p,
