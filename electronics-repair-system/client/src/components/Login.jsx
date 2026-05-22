@@ -33,9 +33,9 @@ export default function Login({ onLogin }) {
     <div className="login-page">
       <div className="login-card">
         <div className="login-logo">
-          <img src="/images/logo.png" alt="Самарт лайф" className="login-logo-img" />
+          <img src="/images/logo.png" alt="Смарт лайф" className="login-logo-img" />
           <h2>
-            Самарт <span>лайф</span>
+            Смарт <span>лайф</span>
           </h2>
           <p>Вхід до системи управління</p>
         </div>

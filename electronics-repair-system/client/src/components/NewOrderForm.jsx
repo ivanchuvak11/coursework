@@ -28,6 +28,7 @@ export default function NewOrderForm() {
       const response = await axios.post('http://localhost:5000/api/orders', form);
       setMessage(`Замовлення #${response.data.id} створено`);
       setForm(INITIAL_FORM);
+      window.dispatchEvent(new Event('orders-summary-refresh'));
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       console.error('Не вдалося створити замовлення:', error);

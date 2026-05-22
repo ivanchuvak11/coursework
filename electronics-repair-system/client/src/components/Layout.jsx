@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import {
   BarChart3,
   Bell,
@@ -18,22 +19,23 @@ import {
 } from 'lucide-react';
 import '../styles/Layout.css';
 
-const BRAND_NAME = 'Самарт лайф';
+const BRAND_NAME = 'Смарт лайф';
+const API_URL = 'http://localhost:5000/api';
 
 const mainNavItems = [
   { path: '/', label: 'Замовлення', icon: ClipboardList },
   { path: '/parts', label: 'Склад', icon: Package },
-  { path: '#clients', label: 'Клієнти', icon: Users, dialog: 'Клієнти' },
-  { path: '#reports', label: 'Звіти', icon: BarChart3, dialog: 'Звіти' },
-  { path: '#finance', label: 'Фінанси', icon: CircleDollarSign, dialog: 'Фінанси' },
-  { path: '#settings', label: 'Налаштування', icon: Settings, dialog: 'Налаштування' },
+  { path: '/clients', label: 'Клієнти', icon: Users },
+  { path: '/reports', label: 'Звіти', icon: BarChart3 },
+  { path: '/finance', label: 'Фінанси', icon: CircleDollarSign },
+  { path: '/settings', label: 'Налаштування', icon: Settings },
 ];
 
 const summaryItems = [
-  { label: 'Нове замовлення', value: 12, className: 'summary-blue' },
-  { label: 'Діагностика', value: 8, className: 'summary-gray' },
-  { label: 'Ремонт', value: 15, className: 'summary-orange' },
-  { label: 'Виконано', value: 23, className: 'summary-green' },
+  { label: 'Нове замовлення', status: 'прийнято', className: 'summary-blue' },
+  { label: 'Діагностика', status: 'діагностика', className: 'summary-gray' },
+  { label: 'Ремонт', status: 'ремонт', className: 'summary-orange' },
+  { label: 'Виконано', status: 'виконано', className: 'summary-green' },
 ];
 
 function SidebarLink({ item, isActive, onClick }) {
@@ -62,6 +64,7 @@ const Layout = ({ children, user, onLogout }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebarCollapsed') === 'true');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [activeDialog, setActiveDialog] = useState(null);
+  const [summaryCounts, setSummaryCounts] = useState({});
   const location = useLocation();
   const todayLabel = new Date()
     .toLocaleDateString('uk-UA', {
@@ -77,8 +80,56 @@ const Layout = ({ children, user, onLogout }) => {
   }, [theme]);
 
   useEffect(() => {
+    const handleThemeChange = (event) => {
+      if (event.detail === 'light' || event.detail === 'dark') {
+        setTheme(event.detail);
+      }
+    };
+
+    window.addEventListener('app-theme-change', handleThemeChange);
+    return () => window.removeEventListener('app-theme-change', handleThemeChange);
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
   }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    const handleSidebarChange = (event) => {
+      setSidebarCollapsed(Boolean(event.detail));
+    };
+
+    window.addEventListener('app-sidebar-collapse', handleSidebarChange);
+    return () => window.removeEventListener('app-sidebar-collapse', handleSidebarChange);
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchSummaryCounts = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/orders`);
+        const counts = response.data.reduce((currentCounts, order) => {
+          currentCounts[order.status] = (currentCounts[order.status] || 0) + 1;
+          return currentCounts;
+        }, {});
+
+        if (isActive) {
+          setSummaryCounts(counts);
+        }
+      } catch (error) {
+        console.error('Не вдалося оновити підсумок замовлень:', error);
+      }
+    };
+
+    fetchSummaryCounts();
+    window.addEventListener('orders-summary-refresh', fetchSummaryCounts);
+
+    return () => {
+      isActive = false;
+      window.removeEventListener('orders-summary-refresh', fetchSummaryCounts);
+    };
+  }, []);
 
   const toggleTheme = () => {
     setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'));
@@ -107,7 +158,7 @@ const Layout = ({ children, user, onLogout }) => {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <Link to="/" className="brand">
           <img className="brand-mark" src="/images/logo.png" alt="" aria-hidden="true" />
-          <span className="brand-main">Самарт</span>
+          <span className="brand-main">Смарт</span>
           <span className="brand-sub">лайф</span>
         </Link>
 
@@ -130,7 +181,7 @@ const Layout = ({ children, user, onLogout }) => {
               <div className="summary-item" key={item.label}>
                 <span className={`summary-dot ${item.className}`}></span>
                 <span>{item.label}</span>
-                <strong>{item.value}</strong>
+                <strong>{summaryCounts[item.status] || 0}</strong>
               </div>
             ))}
           </div>

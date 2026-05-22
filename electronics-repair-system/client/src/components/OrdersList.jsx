@@ -13,6 +13,7 @@ const ORDER_STATUSES = [
   { value: 'виконано', label: 'Виконано', shortLabel: 'Виконано', className: 'status-complete' },
   { value: 'видано', label: 'Видано', shortLabel: 'Видано', className: 'status-issued' },
 ];
+const COMPLETED_STATUS = ORDER_STATUSES.find((status) => status.className === 'status-complete').value;
 
 const FALLBACK_ORDER = {
   id: 58,
@@ -28,8 +29,27 @@ const FALLBACK_ORDER = {
 };
 
 const SORTABLE_TEXT_FIELDS = ['full_name', 'phone', 'email', 'status'];
+const EMPTY_COMPLETION_PART = { partId: '', quantity: 1 };
 
 const getStatusMeta = (status) => ORDER_STATUSES.find((item) => item.value === status) || ORDER_STATUSES[0];
+
+function formatMoney(value) {
+  return `${Number(value || 0).toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} грн`;
+}
+
+function getOrderPartsTotal(order) {
+  return (order.used_parts || []).reduce(
+    (total, part) => total + Number(part.price_at_time || 0) * Number(part.quantity_used || 0),
+    0,
+  );
+}
+
+function getOrderLaborPrice(order) {
+  const savedLaborPrice = Number(order.labor_price || 0);
+  if (savedLaborPrice > 0) return savedLaborPrice;
+
+  return Math.max(Number(order.repair_price || 0) - getOrderPartsTotal(order), 0);
+}
 
 function getOrderNumber(id) {
   return `RM-2024-${String(id || 0).padStart(4, '0')}`;
@@ -101,7 +121,7 @@ function PrintReceipt({ order }) {
     <article className="print-receipt" aria-hidden="true">
       <header className="receipt-header">
         <div>
-          <h1>Самарт лайф</h1>
+          <h1>Смарт лайф</h1>
           <p>Сервісний центр ремонту електроніки</p>
         </div>
         <div className="receipt-number">
@@ -159,13 +179,34 @@ function PrintReceipt({ order }) {
             <td>1</td>
             <td>За домовленістю</td>
           </tr>
+          {order.used_parts?.map((part) => (
+            <tr key={`${part.part_id}-${part.part_name}`}>
+              <td>{part.part_name}</td>
+              <td>{part.quantity_used}</td>
+              <td>{formatMoney(Number(part.price_at_time || 0) * Number(part.quantity_used || 0))}</td>
+            </tr>
+          ))}
+          {getOrderLaborPrice(order) > 0 && (
+            <tr>
+              <td>Робота майстра</td>
+              <td>1</td>
+              <td>{formatMoney(getOrderLaborPrice(order))}</td>
+            </tr>
+          )}
         </tbody>
       </table>
 
       <div className="receipt-total">
-        <span>Орієнтовна вартість</span>
-        <strong>За результатами діагностики</strong>
+        <span>{Number(order.repair_price) > 0 ? 'Вартість ремонту' : 'Орієнтовна вартість'}</span>
+        <strong>{Number(order.repair_price) > 0 ? formatMoney(order.repair_price) : 'За результатами діагностики'}</strong>
       </div>
+
+      {order.completion_comment && (
+        <section className="receipt-section">
+          <h2>Коментар</h2>
+          <p>{order.completion_comment}</p>
+        </section>
+      )}
 
       <footer className="receipt-signatures">
         <div>
@@ -195,6 +236,12 @@ export default function OrdersList() {
   const [pageSize, setPageSize] = useState(13);
   const [currentPage, setCurrentPage] = useState(1);
   const [showDetails, setShowDetails] = useState(true);
+  const [parts, setParts] = useState([]);
+  const [completionOrder, setCompletionOrder] = useState(null);
+  const [completionPrice, setCompletionPrice] = useState('');
+  const [completionComment, setCompletionComment] = useState('');
+  const [completionParts, setCompletionParts] = useState([EMPTY_COMPLETION_PART]);
+  const [completionSaving, setCompletionSaving] = useState(false);
 
   const fetchOrders = async () => {
     try {
@@ -212,6 +259,19 @@ export default function OrdersList() {
   }, []);
 
   useEffect(() => {
+    const fetchParts = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/parts`);
+        setParts(response.data);
+      } catch (error) {
+        console.error('Не вдалося завантажити деталі для завершення ремонту:', error);
+      }
+    };
+
+    fetchParts();
+  }, []);
+
+  useEffect(() => {
     const handleSearch = (event) => {
       setSearch(String(event.detail || ''));
     };
@@ -224,7 +284,23 @@ export default function OrdersList() {
     setCurrentPage(1);
   }, [filterStatus, pageSize, search]);
 
+  const openCompletionDialog = (order) => {
+    const existingParts = Array.isArray(order.used_parts) && order.used_parts.length
+      ? order.used_parts.map((part) => ({ partId: String(part.part_id), quantity: Number(part.quantity_used || 1) }))
+      : [EMPTY_COMPLETION_PART];
+
+    setCompletionOrder(order);
+    setCompletionPrice(getOrderLaborPrice(order) ? String(getOrderLaborPrice(order)) : '');
+    setCompletionComment(order.completion_comment || '');
+    setCompletionParts(existingParts);
+  };
+
   const updateStatus = async (order, status) => {
+    if (status === COMPLETED_STATUS) {
+      openCompletionDialog(order);
+      return;
+    }
+
     try {
       await axios.put(`${API_URL}/orders/${order.id}/status`, { status });
 
@@ -242,9 +318,63 @@ export default function OrdersList() {
 
       setOrders((currentOrders) => currentOrders.map((item) => (item.id === order.id ? { ...item, status } : item)));
       setSelectedOrder((currentOrder) => (currentOrder?.id === order.id ? { ...currentOrder, status } : currentOrder));
+      window.dispatchEvent(new Event('orders-summary-refresh'));
     } catch (error) {
       console.error('Не вдалося оновити статус:', error);
       alert('Помилка оновлення статусу');
+    }
+  };
+
+  const updateCompletionPart = (index, field, value) => {
+    setCompletionParts((currentParts) =>
+      currentParts.map((part, partIndex) => (partIndex === index ? { ...part, [field]: value } : part)),
+    );
+  };
+
+  const addCompletionPart = () => {
+    setCompletionParts((currentParts) => [...currentParts, EMPTY_COMPLETION_PART]);
+  };
+
+  const removeCompletionPart = (index) => {
+    setCompletionParts((currentParts) => currentParts.filter((_, partIndex) => partIndex !== index));
+  };
+
+  const closeCompletionDialog = () => {
+    setCompletionOrder(null);
+    setCompletionPrice('');
+    setCompletionComment('');
+    setCompletionParts([EMPTY_COMPLETION_PART]);
+  };
+
+  const completeOrder = async (event) => {
+    event.preventDefault();
+
+    if (!completionOrder) return;
+
+    try {
+      setCompletionSaving(true);
+      const response = await axios.put(`${API_URL}/orders/${completionOrder.id}/complete`, {
+        laborPrice: completionPrice,
+        comment: completionComment,
+        usedParts: completionParts
+          .filter((part) => part.partId && Number(part.quantity) > 0)
+          .map((part) => ({ partId: Number(part.partId), quantity: Number(part.quantity) })),
+      });
+
+      setOrders((currentOrders) =>
+        currentOrders.map((order) => (order.id === completionOrder.id ? { ...order, ...response.data } : order)),
+      );
+      setSelectedOrder((currentOrder) => (currentOrder?.id === completionOrder.id ? { ...currentOrder, ...response.data } : currentOrder));
+      window.dispatchEvent(new Event('orders-summary-refresh'));
+      closeCompletionDialog();
+
+      const partsResponse = await axios.get(`${API_URL}/parts`);
+      setParts(partsResponse.data);
+    } catch (error) {
+      console.error('Не вдалося завершити замовлення:', error);
+      alert(error.response?.data?.error || 'Помилка завершення замовлення');
+    } finally {
+      setCompletionSaving(false);
     }
   };
 
@@ -326,6 +456,12 @@ export default function OrdersList() {
   const visibleTo = Math.min(currentPage * pageSize, sortedOrders.length);
   const activeOrder = selectedOrder || paginatedOrders[0] || sortedOrders[0] || orders[0] || FALLBACK_ORDER;
   const activeStatus = getStatusMeta(activeOrder.status);
+  const completionPartsTotal = completionParts.reduce((total, usedPart) => {
+    const stockPart = parts.find((part) => String(part.id) === String(usedPart.partId));
+    return total + Number(stockPart?.price || 0) * Number(usedPart.quantity || 0);
+  }, 0);
+  const completionLaborTotal = Number(completionPrice || 0);
+  const completionFinalTotal = completionLaborTotal + completionPartsTotal;
 
   const cancelOrder = async () => {
     if (!activeOrder?.id || !confirm(`Скасувати замовлення ${getOrderNumber(activeOrder.id)}?`)) return;
@@ -334,6 +470,7 @@ export default function OrdersList() {
       await axios.delete(`${API_URL}/orders/${activeOrder.id}`);
       setOrders((currentOrders) => currentOrders.filter((order) => order.id !== activeOrder.id));
       setSelectedOrder(null);
+      window.dispatchEvent(new Event('orders-summary-refresh'));
       alert('Замовлення повністю видалено з бази даних.');
     } catch (error) {
       console.error('Не вдалося видалити замовлення:', error);
@@ -570,6 +707,41 @@ export default function OrdersList() {
           <p className="issue-text">{activeOrder.issue_description || 'Не вказано'}</p>
         </section>
 
+        {(Number(activeOrder.repair_price) > 0 || activeOrder.completion_comment || activeOrder.used_parts?.length > 0) && (
+          <section className="details-section">
+            <div className="details-section-title">
+              <h4>Завершення ремонту</h4>
+              <button type="button" onClick={() => openCompletionDialog(activeOrder)}>✎</button>
+            </div>
+            <div className="details-list">
+              <div>
+                <span>Робота:</span>
+                <strong>{formatMoney(getOrderLaborPrice(activeOrder))}</strong>
+              </div>
+              {activeOrder.used_parts?.length > 0 && (
+                <div>
+                  <span>Деталі:</span>
+                  <strong>
+                    {activeOrder.used_parts
+                      .map((part) => `${part.part_name || 'Деталь'} × ${part.quantity_used} (${formatMoney(Number(part.price_at_time || 0) * Number(part.quantity_used || 0))})`)
+                      .join(', ')}
+                  </strong>
+                </div>
+              )}
+              <div>
+                <span>Разом:</span>
+                <strong>{formatMoney(activeOrder.repair_price)}</strong>
+              </div>
+              {activeOrder.completion_comment && (
+                <div>
+                  <span>Коментар:</span>
+                  <strong>{activeOrder.completion_comment}</strong>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         <section className="details-actions">
           <h4>Дії</h4>
           <button className="primary-action" type="button" onClick={focusActiveOrder}>Перейти до замовлення</button>
@@ -577,6 +749,99 @@ export default function OrdersList() {
           <button className="danger-action" type="button" onClick={cancelOrder}>Скасувати замовлення</button>
         </section>
       </aside>}
+
+      {completionOrder && (
+        <div className="completion-overlay" onClick={closeCompletionDialog}>
+          <form className="completion-modal" onSubmit={completeOrder} onClick={(event) => event.stopPropagation()}>
+            <div className="completion-header">
+              <div>
+                <span>Завершення ремонту</span>
+                <h2>{getOrderNumber(completionOrder.id)}</h2>
+              </div>
+              <button type="button" onClick={closeCompletionDialog} aria-label="Закрити">
+                ×
+              </button>
+            </div>
+
+            <div className="completion-money-grid">
+              <label className="completion-field">
+                Вартість роботи
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={completionPrice}
+                  onChange={(event) => setCompletionPrice(event.target.value)}
+                  placeholder="Наприклад, 1500"
+                  required
+                />
+              </label>
+              <aside className="completion-total-card">
+                <span>Кінцева вартість</span>
+                <strong>{formatMoney(completionFinalTotal)}</strong>
+                <small>Робота {formatMoney(completionLaborTotal)} + деталі {formatMoney(completionPartsTotal)}</small>
+              </aside>
+            </div>
+
+            <div className="completion-parts">
+              <div className="completion-parts-title">
+                <strong>Використані деталі</strong>
+                <button type="button" onClick={addCompletionPart}>
+                  + Додати
+                </button>
+              </div>
+
+              {completionParts.map((usedPart, index) => (
+                <div className="completion-part-row" key={`${index}-${usedPart.partId}`}>
+                  <select value={usedPart.partId} onChange={(event) => updateCompletionPart(index, 'partId', event.target.value)}>
+                    <option value="">Без деталі</option>
+                    {parts.map((part) => (
+                      <option key={part.id} value={part.id}>
+                        {part.part_name} — {part.quantity} шт. — {formatMoney(part.price)}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    min="1"
+                    value={usedPart.quantity}
+                    onChange={(event) => updateCompletionPart(index, 'quantity', event.target.value)}
+                    aria-label="Кількість"
+                  />
+                  <button type="button" onClick={() => removeCompletionPart(index)} disabled={completionParts.length === 1}>
+                    ×
+                  </button>
+                  <span className="completion-part-price">
+                    {formatMoney(
+                      Number(parts.find((part) => String(part.id) === String(usedPart.partId))?.price || 0) *
+                        Number(usedPart.quantity || 0),
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <label className="completion-field">
+              Коментар
+              <textarea
+                rows="3"
+                value={completionComment}
+                onChange={(event) => setCompletionComment(event.target.value)}
+                placeholder="Додаткова інформація за необхідністю"
+              />
+            </label>
+
+            <div className="completion-actions">
+              <button type="button" onClick={closeCompletionDialog}>
+                Скасувати
+              </button>
+              <button className="primary-action" type="submit" disabled={completionSaving}>
+                {completionSaving ? 'Збереження...' : 'Зберегти виконання'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <PrintReceipt order={activeOrder} />
     </div>

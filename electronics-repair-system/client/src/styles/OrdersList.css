@@ -552,6 +552,193 @@
   color: var(--danger);
 }
 
+.completion-overlay {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.46);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 120;
+}
+
+.completion-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  display: grid;
+  gap: 18px;
+  max-height: 92vh;
+  max-width: 620px;
+  overflow-y: auto;
+  padding: 22px;
+  width: 100%;
+}
+
+.completion-header {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 16px;
+}
+
+.completion-header span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.completion-header h2 {
+  color: var(--text-strong);
+  font-size: 1.35rem;
+  margin: 3px 0 0;
+}
+
+.completion-header button,
+.completion-part-row button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.35rem;
+}
+
+.completion-field {
+  color: var(--text-strong);
+  display: grid;
+  font-weight: 800;
+  gap: 8px;
+}
+
+.completion-money-grid {
+  align-items: stretch;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) 230px;
+}
+
+.completion-total-card {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface)), var(--surface-alt));
+  border: 1px solid var(--accent-border);
+  border-radius: 10px;
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+}
+
+.completion-total-card span,
+.completion-total-card small {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.completion-total-card strong {
+  color: var(--text-strong);
+  font-size: 1.35rem;
+}
+
+.completion-field input,
+.completion-field textarea,
+.completion-part-row select,
+.completion-part-row input {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.completion-field input:focus,
+.completion-field textarea:focus,
+.completion-part-row select:focus,
+.completion-part-row input:focus {
+  border-color: var(--accent-border);
+  outline: 3px solid var(--accent-ring);
+}
+
+.completion-parts {
+  display: grid;
+  gap: 10px;
+}
+
+.completion-parts-title {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.completion-parts-title strong {
+  color: var(--text-strong);
+}
+
+.completion-parts-title button {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.completion-part-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 92px 34px 120px;
+}
+
+.completion-part-price {
+  color: var(--text-strong);
+  font-weight: 800;
+  text-align: right;
+}
+
+.completion-part-row button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.completion-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.completion-actions button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-strong);
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.completion-actions .primary-action {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  border: none;
+  box-shadow: 0 14px 30px var(--accent-ring);
+  color: #ffffff;
+}
+
+.completion-actions .primary-action:hover {
+  background: var(--accent-hover);
+}
+
+.completion-actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 .print-receipt {
   display: none;
 }
@@ -580,6 +767,15 @@
   .orders-footer-row {
     align-items: flex-start;
     grid-template-columns: 1fr;
+  }
+
+  .completion-money-grid,
+  .completion-part-row {
+    grid-template-columns: 1fr;
+  }
+
+  .completion-part-price {
+    text-align: left;
   }
 }
 

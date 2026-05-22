@@ -51,6 +51,21 @@ pool.connect((err, client, release) => {
     }
 });
 
+async function ensureOrderCompletionColumns() {
+    try {
+        await pool.query(`
+            ALTER TABLE orders
+            ADD COLUMN IF NOT EXISTS repair_price NUMERIC(10, 2) DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS labor_price NUMERIC(10, 2) DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS completion_comment TEXT
+        `);
+    } catch (err) {
+        console.error('❌ Не вдалося підготувати поля завершення ремонту:', err.message);
+    }
+}
+
+ensureOrderCompletionColumns();
+
 // ========== EMAIL ==========
 const emailTransporter = nodemailer.createTransport({
     service: 'gmail',
@@ -71,7 +86,7 @@ emailTransporter.verify((error) => {
 async function sendEmail(to, subject, htmlContent) {
     try {
         const info = await emailTransporter.sendMail({
-            from: `"REPAIRMASTER" <${process.env.EMAIL_USER}>`,
+            from: `"Смарт лайф" <${process.env.EMAIL_USER}>`,
             to: to,
             subject: subject,
             html: htmlContent
@@ -132,21 +147,38 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 app.get('/api/orders', authMiddleware, async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT 
-                o.id, 
-                o.status, 
+            SELECT
+                o.id,
+                o.status,
                 o.created_at,
+                o.repair_price,
+                o.labor_price,
+                o.completion_comment,
                 c.id as client_id,
-                c.full_name, 
-                c.phone, 
-                c.email, 
-                d.device_type, 
-                d.brand, 
-                d.model, 
-                d.issue_description
+                c.full_name,
+                c.phone,
+                c.email,
+                d.device_type,
+                d.brand,
+                d.model,
+                d.issue_description,
+                COALESCE(
+                    json_agg(
+                        json_build_object(
+                            'part_id', op.part_id,
+                            'part_name', sp.part_name,
+                            'quantity_used', op.quantity_used,
+                            'price_at_time', op.price_at_time
+                        )
+                    ) FILTER (WHERE op.part_id IS NOT NULL),
+                    '[]'
+                ) AS used_parts
             FROM orders o
             JOIN devices d ON o.device_id = d.id
             JOIN clients c ON d.client_id = c.id
+            LEFT JOIN order_parts op ON op.order_id = o.id
+            LEFT JOIN spare_parts sp ON sp.id = op.part_id
+            GROUP BY o.id, c.id, d.id
             ORDER BY o.id DESC
         `);
         res.json(result.rows);
@@ -183,6 +215,10 @@ app.put('/api/orders/:id/status', authMiddleware, async (req, res) => {
     const { status } = req.body;
 
     try {
+        if (status === 'виконано') {
+            return res.status(400).json({ error: 'Для статусу "Виконано" використовуйте завершення ремонту з ціною.' });
+        }
+
         const result = await pool.query(
             'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
             [status, id]
@@ -218,24 +254,51 @@ app.put('/api/orders/:id/status', authMiddleware, async (req, res) => {
                 : `📋 Зміна статусу замовлення #${id}`;
 
             const html = `
-                <div style="font-family: Arial, sans-serif; max-width: 500px;">
-                    <div style="background: #4c5c96; color: white; padding: 15px; text-align: center;">
-                        <h2>🔧 REPAIRMASTER</h2>
-                    </div>
-                    <div style="background: #f5f5f5; padding: 20px;">
-                        <p>Шановний(а) <strong>${client.full_name}</strong>,</p>
-                        ${status === 'виконано' ? `
-                            <p>Ваше замовлення <strong>#${id}</strong> <strong style="color: #4caf50;">ВИКОНАНО</strong>!</p>
-                            <p>Ви можете забрати пристрій у нашій майстерні.</p>
-                        ` : `
-                            <p>Статус вашого замовлення <strong>#${id}</strong> змінено на:</p>
-                            <div style="background: #4c5c96; color: white; padding: 10px; text-align: center; border-radius: 5px;">
-                                ${statusText[status] || status}
+                <div style="margin:0; padding:0; background:#eef8f6; font-family:Arial, 'Segoe UI', sans-serif; color:#10233f;">
+                    <div style="max-width:640px; margin:0 auto; padding:28px 14px;">
+                        <div style="background:linear-gradient(135deg,#0d9488,#2563eb); border-radius:18px 18px 0 0; padding:30px 28px; color:#ffffff;">
+                            <div style="font-size:13px; letter-spacing:1.8px; text-transform:uppercase; opacity:.9;">Сервісний центр</div>
+                            <h1 style="margin:8px 0 0; font-size:30px; line-height:1.15;">Смарт лайф</h1>
+                            <p style="margin:10px 0 0; font-size:15px; opacity:.92;">Оновлення статусу вашого ремонту</p>
+                        </div>
+
+                        <div style="background:#ffffff; border:1px solid #cfe1e5; border-top:none; border-radius:0 0 18px 18px; padding:28px; box-shadow:0 18px 45px rgba(15,78,92,.12);">
+                            <p style="margin:0 0 18px; font-size:16px;">Вітаємо, <strong>${client.full_name}</strong>.</p>
+                            <p style="margin:0 0 20px; color:#63768c; font-size:15px; line-height:1.6;">
+                                ${status === 'виконано'
+                                    ? `Ваше замовлення <strong style="color:#10233f;">#${id}</strong> виконано. Пристрій готовий до видачі.`
+                                    : `Статус замовлення <strong style="color:#10233f;">#${id}</strong> було змінено. Нижче актуальна інформація.`}
+                            </p>
+
+                            <div style="background:#f4fbfa; border:1px solid #d7ebe9; border-radius:14px; padding:18px; margin-bottom:18px;">
+                                <div style="color:#63768c; font-size:13px; margin-bottom:8px;">Поточний статус</div>
+                                <div style="background:${status === 'виконано' ? '#16a34a' : status === 'ремонт' ? '#f59e0b' : status === 'діагностика' ? '#2563eb' : '#0d9488'}; color:#ffffff; border-radius:999px; display:inline-block; font-size:16px; font-weight:700; padding:10px 18px;">
+                                    ${statusText[status] || status}
+                                </div>
                             </div>
-                        `}
-                        <p><strong>Пристрій:</strong> ${client.brand || ''} ${client.model || ''}</p>
-                        <hr>
-                        <p style="color: #666; font-size: 12px;">Дякуємо, що обрали REPAIRMASTER!</p>
+
+                            <table style="width:100%; border-collapse:collapse; margin:0 0 22px;">
+                                <tr>
+                                    <td style="padding:12px 0; color:#63768c; border-bottom:1px solid #e3eef0;">Номер замовлення</td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:700; border-bottom:1px solid #e3eef0;">#${id}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 0; color:#63768c; border-bottom:1px solid #e3eef0;">Пристрій</td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:700; border-bottom:1px solid #e3eef0;">${client.brand || ''} ${client.model || ''}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 0; color:#63768c;">Що далі</td>
+                                    <td style="padding:12px 0; text-align:right; font-weight:700;">
+                                        ${status === 'виконано' ? 'Очікуємо вас для видачі' : 'Ми повідомимо про наступне оновлення'}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <div style="background:#10233f; border-radius:14px; color:#ffffff; padding:18px;">
+                                <div style="font-weight:700; margin-bottom:6px;">Дякуємо, що обрали Смарт лайф</div>
+                                <div style="color:#cbd7e8; font-size:13px; line-height:1.5;">Цей лист сформовано автоматично після зміни статусу замовлення.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -247,6 +310,143 @@ app.put('/api/orders/:id/status', authMiddleware, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Помилка оновлення статусу' });
+    }
+});
+
+app.put('/api/orders/:id/complete', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const { repairPrice, laborPrice, comment, usedParts = [] } = req.body;
+    const client = await pool.connect();
+    const normalizedLaborPrice = Number(laborPrice ?? repairPrice ?? 0) || 0;
+    let partsTotal = 0;
+
+    try {
+        await client.query('BEGIN');
+
+        const orderResult = await client.query('SELECT id FROM orders WHERE id = $1 FOR UPDATE', [id]);
+
+        if (orderResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Замовлення не знайдено' });
+        }
+
+        await client.query(`
+            UPDATE spare_parts AS sp
+            SET quantity = sp.quantity + used_parts.quantity_used
+            FROM (
+                SELECT part_id, SUM(quantity_used)::integer AS quantity_used
+                FROM order_parts
+                WHERE order_id = $1
+                GROUP BY part_id
+            ) AS used_parts
+            WHERE sp.id = used_parts.part_id
+        `, [id]);
+
+        await client.query('DELETE FROM order_parts WHERE order_id = $1', [id]);
+
+        for (const usedPart of usedParts) {
+            const partId = Number(usedPart.partId);
+            const quantity = Number(usedPart.quantity);
+
+            if (!partId || !quantity || quantity <= 0) continue;
+
+            const partResult = await client.query(
+                'SELECT id, part_name, quantity, price FROM spare_parts WHERE id = $1 FOR UPDATE',
+                [partId]
+            );
+
+            if (partResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Обрану деталь не знайдено' });
+            }
+
+            const part = partResult.rows[0];
+
+            if (Number(part.quantity) < quantity) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: `Недостатньо на складі: ${part.part_name}` });
+            }
+
+            await client.query(
+                'INSERT INTO order_parts (order_id, part_id, quantity_used, price_at_time) VALUES ($1, $2, $3, $4)',
+                [id, partId, quantity, part.price]
+            );
+            await client.query('UPDATE spare_parts SET quantity = quantity - $1 WHERE id = $2', [quantity, partId]);
+            partsTotal += Number(part.price || 0) * quantity;
+        }
+
+        const totalRepairPrice = normalizedLaborPrice + partsTotal;
+
+        const updatedOrder = await client.query(
+            `UPDATE orders
+             SET status = 'виконано',
+                 labor_price = $1,
+                 repair_price = $2,
+                 completion_comment = $3,
+                 updated_at = NOW()
+             WHERE id = $4
+             RETURNING id, status, labor_price, repair_price, completion_comment`,
+            [normalizedLaborPrice, totalRepairPrice, comment || null, id]
+        );
+
+        const usedPartsResult = await client.query(`
+            SELECT op.part_id, sp.part_name, op.quantity_used, op.price_at_time
+            FROM order_parts op
+            JOIN spare_parts sp ON sp.id = op.part_id
+            WHERE op.order_id = $1
+            ORDER BY sp.part_name
+        `, [id]);
+
+        await client.query('COMMIT');
+
+        try {
+            const notificationResult = await pool.query(`
+                SELECT c.email, c.full_name, d.brand, d.model
+                FROM orders o
+                JOIN devices d ON o.device_id = d.id
+                JOIN clients c ON d.client_id = c.id
+                WHERE o.id = $1
+            `, [id]);
+            const notificationClient = notificationResult.rows[0];
+
+            if (notificationClient?.email) {
+                await sendEmail(
+                    notificationClient.email,
+                    `✅ Замовлення #${id} виконано!`,
+                    `
+                        <div style="margin:0; padding:0; background:#eef8f6; font-family:Arial, 'Segoe UI', sans-serif; color:#10233f;">
+                            <div style="max-width:640px; margin:0 auto; padding:28px 14px;">
+                                <div style="background:linear-gradient(135deg,#0d9488,#2563eb); border-radius:18px 18px 0 0; padding:30px 28px; color:#ffffff;">
+                                    <div style="font-size:13px; letter-spacing:1.8px; text-transform:uppercase; opacity:.9;">Смарт лайф</div>
+                                    <h1 style="margin:8px 0 0; font-size:30px; line-height:1.15;">Ремонт виконано</h1>
+                                </div>
+                                <div style="background:#ffffff; border:1px solid #cfe1e5; border-top:none; border-radius:0 0 18px 18px; padding:28px;">
+                                    <p style="margin:0 0 16px;">Вітаємо, <strong>${notificationClient.full_name}</strong>.</p>
+                                    <p style="margin:0 0 18px; color:#63768c; line-height:1.6;">Ваше замовлення <strong>#${id}</strong> виконано. Пристрій готовий до видачі.</p>
+                                    <div style="background:#f4fbfa; border:1px solid #d7ebe9; border-radius:14px; padding:18px;">
+                                        <div style="color:#63768c; font-size:13px; margin-bottom:8px;">Пристрій</div>
+                                        <strong>${notificationClient.brand || ''} ${notificationClient.model || ''}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                );
+            }
+        } catch (emailError) {
+            console.error('Email про завершення не відправлено:', emailError.message);
+        }
+
+        res.json({
+            ...updatedOrder.rows[0],
+            used_parts: usedPartsResult.rows,
+        });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Помилка завершення замовлення:', err.message);
+        res.status(500).json({ error: 'Помилка завершення замовлення' });
+    } finally {
+        client.release();
     }
 });
 

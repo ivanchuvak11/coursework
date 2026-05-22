@@ -7,6 +7,7 @@ import Login from './components/Login';
 import OrdersList from './components/OrdersList';
 import NewOrderForm from './components/NewOrderForm';
 import PartsInventory from './components/PartsInventory';
+import { ClientsPage, FinancePage, ReportsPage, SettingsPage } from './components/SectionPages';
 import './App.css';
 
 function AuthenticatedApp({ user, onLogout }) {
@@ -19,6 +20,10 @@ function AuthenticatedApp({ user, onLogout }) {
           <Route path="/" element={<OrdersList />} />
           <Route path="/new-order" element={<NewOrderForm />} />
           <Route path="/parts" element={<PartsInventory />} />
+          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/finance" element={<FinancePage />} />
+          <Route path="/settings" element={<SettingsPage user={user} />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Layout>
