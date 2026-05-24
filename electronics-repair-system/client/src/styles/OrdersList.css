@@ -37,7 +37,7 @@
 .new-order-button,
 .primary-action {
   align-items: center;
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  background: var(--accent);
   border-radius: 8px;
   box-shadow: 0 14px 30px var(--accent-ring);
   color: #ffffff;
@@ -302,7 +302,7 @@
 }
 
 .pagination button.active {
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  background: var(--accent);
   color: #ffffff;
 }
 
@@ -724,7 +724,7 @@
 }
 
 .completion-actions .primary-action {
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  background: var(--accent);
   border: none;
   box-shadow: 0 14px 30px var(--accent-ring);
   color: #ffffff;

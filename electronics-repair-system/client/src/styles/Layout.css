@@ -156,7 +156,7 @@ textarea {
 }
 
 .sidebar-link.active {
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  background: var(--accent);
   color: #ffffff;
   box-shadow: 0 14px 28px var(--accent-ring);
 }

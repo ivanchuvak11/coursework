@@ -34,25 +34,25 @@
 
 :root[data-theme='dark'] {
   --font-heading: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
-  --app-bg: #0b1020;
+  --app-bg: #050b16;
   --app-bg-image:
-    linear-gradient(rgba(148, 163, 184, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.055) 1px, transparent 1px),
-    radial-gradient(circle at 14% 12%, rgba(99, 102, 241, 0.24), transparent 24rem),
-    radial-gradient(circle at 92% 4%, rgba(20, 184, 166, 0.12), transparent 22rem);
-  --surface: rgba(18, 25, 43, 0.94);
-  --surface-strong: #111827;
-  --surface-alt: #1f2a44;
-  --input-bg: rgba(9, 14, 28, 0.72);
-  --text: #cbd7e8;
-  --text-muted: #8fa1bb;
+    linear-gradient(rgba(96, 165, 250, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(96, 165, 250, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 14% 12%, rgba(37, 99, 235, 0.18), transparent 24rem),
+    radial-gradient(circle at 88% 4%, rgba(14, 165, 233, 0.12), transparent 22rem);
+  --surface: rgba(10, 18, 33, 0.94);
+  --surface-strong: #0b1220;
+  --surface-alt: #111d33;
+  --input-bg: rgba(5, 11, 22, 0.72);
+  --text: #c7d2e5;
+  --text-muted: #8ea3c0;
   --text-strong: #f8fafc;
-  --border: #2a3a5b;
-  --accent: #8b5cf6;
-  --accent-hover: #7c3aed;
-  --accent-soft: rgba(139, 92, 246, 0.16);
-  --accent-border: #a78bfa;
-  --accent-ring: rgba(139, 92, 246, 0.22);
+  --border: #223654;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.16);
+  --accent-border: #3b82f6;
+  --accent-ring: rgba(37, 99, 235, 0.22);
   --success: #22c55e;
   --warning: #f59e0b;
   --danger-soft: rgba(239, 68, 68, 0.16);

@@ -51,8 +51,16 @@ function SidebarLink({ item, isActive, onClick }) {
     );
   }
 
+  const handleClick = (event) => {
+    if (isActive || event.detail > 1) {
+      event.preventDefault();
+    }
+
+    onClick();
+  };
+
   return (
-    <Link className={className} to={item.path} onClick={onClick} title={item.label}>
+    <Link className={className} to={item.path} onClick={handleClick} title={item.label}>
       <Icon className="sidebar-icon" size={22} strokeWidth={1.8} />
       <span>{item.label}</span>
     </Link>
@@ -157,7 +165,7 @@ const Layout = ({ children, user, onLogout }) => {
     <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <Link to="/" className="brand">
-          <img className="brand-mark" src="/images/logo.png" alt="" aria-hidden="true" />
+          <img className="brand-mark" src={theme === 'dark' ? '/images/darklogo.png' : '/images/logo.png'} alt="" aria-hidden="true" />
           <span className="brand-main">Смарт</span>
           <span className="brand-sub">лайф</span>
         </Link>
