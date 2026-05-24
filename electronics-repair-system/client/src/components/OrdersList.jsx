@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { CheckCircle2, PlusCircle } from 'lucide-react';
 import '../styles/SharedDark.css';
 import '../styles/OrdersList.css';
 
@@ -427,6 +428,9 @@ export default function OrdersList() {
     });
     return counts;
   }, [orders]);
+  const acceptedStatus = ORDER_STATUSES[0].value;
+  const completedOrdersCount = statusCounts[COMPLETED_STATUS] || 0;
+  const newOrdersCount = statusCounts[acceptedStatus] || 0;
 
   const sortedOrders = useMemo(() => {
     const normalizedSearch = search.toLowerCase();
@@ -495,11 +499,44 @@ export default function OrdersList() {
   return (
     <div className={`orders-page repair-dashboard ${showDetails ? '' : 'details-collapsed'}`}>
       <section className="orders-main-panel">
+        <section className="service-focus-banner" aria-label="Сервісний фокус">
+          <div className="service-focus-content">
+            <div className="service-focus-heading">
+              <span className="service-focus-icon">
+                <img className="service-focus-logo service-focus-logo-light" src="/images/logo.png" alt="" aria-hidden="true" />
+                <img className="service-focus-logo service-focus-logo-dark" src="/images/darklogo.png" alt="" aria-hidden="true" />
+              </span>
+              <div>
+                <h2>
+                  <span>Смарт</span>лайф
+                </h2>
+                <p>Швидше закривайте готові ремонти</p>
+              </div>
+            </div>
+            <div className="service-focus-metrics">
+              <div className="service-focus-metric">
+                <CheckCircle2 size={24} strokeWidth={1.9} />
+                <span>
+                  <strong>{completedOrdersCount}</strong> виконано
+                  <small>готові до видачі</small>
+                </span>
+              </div>
+              <div className="service-focus-metric">
+                <PlusCircle size={24} strokeWidth={1.9} />
+                <span>
+                  <strong>{newOrdersCount}</strong> нове
+                  <small>потребує уваги</small>
+                </span>
+              </div>
+            </div>
+            <Link className="service-focus-action" to="/new-order">
+              Створити замовлення <span>+</span>
+            </Link>
+          </div>
+        </section>
+
         <div className="orders-toolbar">
           <h1>Замовлення</h1>
-          <Link className="new-order-button" to="/new-order">
-            Нове замовлення <span>+</span>
-          </Link>
         </div>
 
         <div className="status-tabs">

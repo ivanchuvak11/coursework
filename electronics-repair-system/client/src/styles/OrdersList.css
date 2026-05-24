@@ -19,6 +19,157 @@
   padding: 24px 32px 32px;
 }
 
+.service-focus-banner {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.86) 36%, rgba(255, 255, 255, 0.28) 62%),
+    url('/images/service-focus-banner.png');
+  background-position: center;
+  background-size: cover;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 26px;
+  min-height: 255px;
+  overflow: hidden;
+  position: relative;
+}
+
+.service-focus-content {
+  display: grid;
+  gap: 20px;
+  max-width: 560px;
+  padding: 34px 34px 30px;
+  position: relative;
+  z-index: 1;
+}
+
+.service-focus-heading {
+  align-items: center;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 66px minmax(0, 1fr);
+}
+
+.service-focus-icon {
+  align-items: center;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--accent);
+  display: inline-flex;
+  height: 66px;
+  justify-content: center;
+  width: 66px;
+}
+
+.service-focus-logo {
+  display: block;
+  height: 38px;
+  object-fit: contain;
+  width: 38px;
+}
+
+.service-focus-logo-dark {
+  display: none;
+}
+
+:root[data-theme='dark'] .service-focus-logo-light {
+  display: none;
+}
+
+:root[data-theme='dark'] .service-focus-logo-dark {
+  display: block;
+}
+
+.service-focus-content h2 {
+  color: var(--text-strong);
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  font-weight: 900;
+  line-height: 1;
+  margin: 0;
+}
+
+.service-focus-content h2 span {
+  color: #0d9488;
+}
+
+.service-focus-content p {
+  color: var(--text);
+  font-size: 1.08rem;
+  font-weight: 600;
+  margin: 8px 0 0;
+}
+
+.service-focus-metrics {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.service-focus-metric {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--accent);
+  display: flex;
+  gap: 12px;
+  min-height: 70px;
+  padding: 12px 16px;
+}
+
+.service-focus-metric span {
+  color: var(--text-strong);
+  font-family: var(--font-accent);
+  font-size: 1.04rem;
+  font-weight: 900;
+  line-height: 1.18;
+}
+
+.service-focus-metric strong {
+  color: var(--accent);
+  font-size: 1.18rem;
+  margin-right: 4px;
+}
+
+.service-focus-metric small {
+  color: var(--text-muted);
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.service-focus-action {
+  align-items: center;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--surface-strong);
+  display: inline-flex;
+  font-family: var(--font-accent);
+  font-size: 1.02rem;
+  font-weight: 900;
+  gap: 20px;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 22px;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.service-focus-action:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.service-focus-action span {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
 .orders-toolbar {
   align-items: center;
   display: flex;
@@ -40,8 +191,8 @@
   align-items: center;
   background: var(--accent);
   border-radius: 8px;
-  box-shadow: 0 14px 30px var(--accent-ring);
-  color: #ffffff;
+  box-shadow: none;
+  color: var(--surface-strong);
   display: inline-flex;
   font-family: var(--font-accent);
   font-size: 1rem;
@@ -90,7 +241,7 @@
 }
 
 .status-tabs button.active {
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px var(--accent);
   color: var(--accent);
@@ -282,24 +433,45 @@
 }
 
 :root[data-theme='dark'] .status-accepted {
-  background: rgba(37, 99, 235, 0.2);
-  color: #93c5fd;
+  background: rgba(245, 245, 245, 0.12);
+  color: #f5f5f5;
 }
 
 :root[data-theme='dark'] .status-diagnostics,
 :root[data-theme='dark'] .status-issued {
-  background: rgba(56, 189, 248, 0.14);
-  color: #7dd3fc;
+  background: rgba(163, 163, 163, 0.14);
+  color: #d4d4d4;
 }
 
 :root[data-theme='dark'] .status-repair {
-  background: rgba(249, 115, 22, 0.16);
-  color: #fdba74;
+  background: rgba(212, 212, 212, 0.12);
+  color: #e5e5e5;
 }
 
 :root[data-theme='dark'] .status-complete {
-  background: rgba(34, 197, 94, 0.16);
-  color: #86efac;
+  background: rgba(250, 250, 250, 0.16);
+  color: #fafafa;
+}
+
+:root[data-theme='dark'] .service-focus-banner {
+  background:
+    linear-gradient(90deg, rgba(10, 10, 10, 0.98) 0%, rgba(10, 10, 10, 0.9) 34%, rgba(10, 10, 10, 0.32) 62%, rgba(10, 10, 10, 0.12) 100%),
+    url('/images/service-focus-banner.png');
+  background-position: center;
+  background-size: cover;
+}
+
+:root[data-theme='dark'] .service-focus-icon,
+:root[data-theme='dark'] .service-focus-metric {
+  background: rgba(18, 18, 18, 0.88);
+}
+
+:root[data-theme='dark'] .service-focus-action {
+  color: #050505;
+}
+
+:root[data-theme='dark'] .service-focus-content h2 span {
+  color: var(--text-strong);
 }
 
 .orders-table select,
@@ -348,8 +520,8 @@
 
 .pagination button.active {
   background: var(--accent);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, #ffffff 22%, var(--accent));
-  color: #ffffff;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--surface-strong) 22%, var(--accent));
+  color: var(--surface-strong);
 }
 
 .stock-panel {
@@ -613,10 +785,24 @@
   min-height: 48px;
 }
 
+:root[data-theme='dark'] .details-actions button {
+  background: transparent;
+  border-color: #3f3f46;
+}
+
+:root[data-theme='dark'] .details-actions button:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: #71717a;
+}
+
 .details-actions .primary-action {
-  border: none;
+  border: 1px solid var(--border);
   cursor: pointer;
   font: inherit;
+}
+
+:root[data-theme='dark'] .details-actions .primary-action {
+  border-color: #e5e7eb;
 }
 
 .details-actions .danger-action {
@@ -810,8 +996,8 @@
 .completion-actions .primary-action {
   background: var(--accent);
   border: none;
-  box-shadow: 0 14px 30px var(--accent-ring);
-  color: #ffffff;
+  box-shadow: none;
+  color: var(--surface-strong);
 }
 
 .completion-actions .primary-action:hover {
@@ -844,6 +1030,24 @@
     padding: 20px 16px;
   }
 
+  .service-focus-banner {
+    background:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88)),
+      url('/images/service-focus-banner.png');
+    min-height: auto;
+  }
+
+  :root[data-theme='dark'] .service-focus-banner {
+    background:
+      linear-gradient(90deg, rgba(14, 14, 14, 0.96), rgba(14, 14, 14, 0.9)),
+      url('/images/service-focus-banner.png');
+  }
+
+  .service-focus-content {
+    max-width: none;
+    padding: 26px;
+  }
+
   .stock-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -864,6 +1068,19 @@
 }
 
 @media (max-width: 560px) {
+  .service-focus-heading {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+
+  .service-focus-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .service-focus-action {
+    width: 100%;
+  }
+
   .orders-toolbar {
     align-items: flex-start;
     flex-direction: column;
