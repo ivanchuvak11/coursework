@@ -2,7 +2,8 @@
 
 :root {
   --font-ui: 'Manrope', 'Segoe UI', system-ui, sans-serif;
-  --font-heading: 'Nunito Sans', 'Manrope', system-ui, sans-serif;
+  --font-heading: 'Space Grotesk', 'Manrope', system-ui, sans-serif;
+  --font-accent: 'Nunito Sans', 'Manrope', system-ui, sans-serif;
   --app-bg: #eef8f6;
   --app-bg-image:
     linear-gradient(135deg, rgba(238, 248, 246, 0.58), rgba(232, 246, 241, 0.42)),
@@ -28,6 +29,7 @@
   --danger-soft: #fee2e2;
   --shadow-sm: 0 12px 32px rgba(15, 78, 92, 0.08);
   --shadow-lg: 0 26px 70px rgba(15, 78, 92, 0.2);
+  font-size: 16.5px;
   color-scheme: light;
   font-family: var(--font-ui);
 }
@@ -71,6 +73,8 @@ body {
   background-attachment: fixed;
   background-position: center;
   background-size: cover;
+  font-size: 1rem;
+  line-height: 1.58;
   margin: 0;
 }
 
@@ -96,6 +100,7 @@ h3,
 h4 {
   font-family: var(--font-heading);
   letter-spacing: 0;
+  line-height: 1.16;
 }
 
 .page-error {

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Trash2 } from 'lucide-react';
 import '../styles/SharedDark.css';
+import '../styles/SectionPages.css';
 import '../styles/PartsInventory.css';
 
 const API_URL = 'http://localhost:5000/api';
@@ -127,16 +128,21 @@ export default function PartsInventory() {
   if (loading) return <div className="loading">Завантаження...</div>;
 
   return (
-    <div className="parts-page">
-      <div className="glass-container">
-        <div className="page-header">
-          <h2>Склад запчастин</h2>
-          <p>Всього найменувань: {parts.length}</p>
+    <div className="section-page parts-page">
+      <div className="section-header">
+        <div>
+          <h1>Склад запчастин</h1>
+          <p>Облік деталей, залишків та закупівельної вартості для ремонту.</p>
         </div>
+        <strong className="parts-count">Всього найменувань: {parts.length}</strong>
+      </div>
 
-        <button className="btn-primary inventory-toggle" type="button" onClick={() => setShowForm((isOpen) => !isOpen)}>
-          + Додати деталь
-        </button>
+      <div className="section-card parts-card">
+        <div className="section-tools parts-tools">
+          <button className="btn-primary inventory-toggle" type="button" onClick={() => setShowForm((isOpen) => !isOpen)}>
+            + Додати деталь
+          </button>
+        </div>
 
         {showForm && (
           <form onSubmit={addPart} className="form-card inventory-form">

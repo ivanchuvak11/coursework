@@ -1,9 +1,26 @@
 .inventory-toggle {
-  margin-bottom: 16px;
+  margin: 0;
+}
+
+.parts-count {
+  align-self: center;
+  color: var(--text-muted);
+  font-family: var(--font-accent);
+  font-size: 1rem;
+}
+
+.parts-card {
+  display: grid;
+  gap: 16px;
+}
+
+.parts-tools {
+  justify-content: flex-start;
+  margin-bottom: 0;
 }
 
 .inventory-form {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .inventory-form-grid {
@@ -17,6 +34,7 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
+  font-size: 1rem;
   min-width: 0;
   padding: 10px 12px;
 }
@@ -32,6 +50,8 @@
   border-radius: 8px;
   color: var(--text);
   cursor: pointer;
+  font-family: var(--font-accent);
+  font-size: 1rem;
   font-weight: 800;
   padding: 10px 14px;
 }
@@ -44,12 +64,13 @@
 .parts-table {
   border-collapse: collapse;
   color: var(--text);
+  font-size: 1rem;
   width: 100%;
 }
 
 .parts-table th,
 .parts-table td {
-  padding: 13px 14px;
+  padding: 15px 16px;
   text-align: left;
 }
 
@@ -57,7 +78,8 @@
   background: var(--surface-alt);
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.78rem;
+  font-family: var(--font-accent);
+  font-size: 0.9rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -74,6 +96,21 @@
 
 .parts-table tbody tr:hover {
   background: var(--surface-alt);
+}
+
+.parts-table td:nth-child(2) {
+  color: var(--text-strong);
+  font-family: var(--font-accent);
+  font-weight: 800;
+}
+
+.parts-table td:nth-child(3) {
+  color: var(--text-muted);
+}
+
+.parts-table td:nth-child(5) {
+  font-family: var(--font-heading);
+  font-weight: 600;
 }
 
 .quantity-control {
@@ -105,6 +142,8 @@
 }
 
 .quantity-control span {
+  font-family: var(--font-heading);
+  font-size: 1.02rem;
   font-weight: 800;
   min-width: 40px;
   text-align: center;

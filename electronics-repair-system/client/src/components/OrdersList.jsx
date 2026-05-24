@@ -650,7 +650,6 @@ export default function OrdersList() {
         <section className="details-section">
           <div className="details-section-title">
             <h4>Клієнт</h4>
-            <button type="button" onClick={() => handleEditClick('phone', activeOrder.phone)}>✎</button>
           </div>
           <div className="details-list">
             <div>
@@ -688,7 +687,6 @@ export default function OrdersList() {
         <section className="details-section">
           <div className="details-section-title">
             <h4>Пристрій</h4>
-            <button type="button" onClick={() => alert('Редагування пристрою потребує endpoint для оновлення devices на сервері.')}>✎</button>
           </div>
           <div className="details-list">
             <div>
@@ -713,7 +711,7 @@ export default function OrdersList() {
           <section className="details-section">
             <div className="details-section-title">
               <h4>Завершення ремонту</h4>
-              <button type="button" onClick={() => openCompletionDialog(activeOrder)}>✎</button>
+              <button className="section-text-action" type="button" onClick={() => openCompletionDialog(activeOrder)}>Змінити</button>
             </div>
             <div className="details-list">
               <div>

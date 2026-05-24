@@ -38,7 +38,8 @@
 
 .login-card h2 {
   color: var(--text-strong);
-  font-size: 1.55rem;
+  font-family: var(--font-heading);
+  font-size: 1.85rem;
   font-weight: 800;
   letter-spacing: 0;
   margin: 0;
@@ -50,6 +51,7 @@
 
 .login-card p {
   color: var(--text-muted);
+  font-size: 1rem;
   margin: 6px 0 0;
 }
 
@@ -58,7 +60,7 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 1rem;
   margin-bottom: 12px;
   padding: 11px 12px;
   width: 100%;
@@ -75,6 +77,8 @@
   border-radius: 8px;
   color: white;
   cursor: pointer;
+  font-family: var(--font-accent);
+  font-size: 1rem;
   font-weight: 800;
   padding: 11px 14px;
   transition: background 0.2s, transform 0.2s;
@@ -96,13 +100,13 @@
   background: var(--danger-soft);
   border-radius: 8px;
   color: var(--danger);
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   margin-bottom: 14px;
   padding: 10px;
 }
 
 .test-creds {
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   margin-top: 18px;
 }
