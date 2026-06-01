@@ -57,14 +57,118 @@ async function ensureOrderCompletionColumns() {
             ALTER TABLE orders
             ADD COLUMN IF NOT EXISTS repair_price NUMERIC(10, 2) DEFAULT 0,
             ADD COLUMN IF NOT EXISTS labor_price NUMERIC(10, 2) DEFAULT 0,
-            ADD COLUMN IF NOT EXISTS completion_comment TEXT
+            ADD COLUMN IF NOT EXISTS completion_comment TEXT,
+            ADD COLUMN IF NOT EXISTS assigned_master_id INTEGER
         `);
     } catch (err) {
         console.error('❌ Не вдалося підготувати поля завершення ремонту:', err.message);
     }
 }
 
-ensureOrderCompletionColumns();
+async function ensureMastersSchema() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS masters (
+                id SERIAL PRIMARY KEY,
+                full_name VARCHAR(100) NOT NULL UNIQUE,
+                specialization VARCHAR(100),
+                is_active BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        await pool.query(`
+            INSERT INTO masters (full_name, specialization)
+            VALUES
+                ('Андрій К.', 'Смартфони та планшети'),
+                ('Олег Т.', 'Ноутбуки та ПК'),
+                ('Петро І.', 'Ігрові консолі'),
+                ('Марина С.', 'Діагностика електроніки')
+            ON CONFLICT (full_name) DO NOTHING
+        `);
+
+        await pool.query(`
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM pg_constraint
+                    WHERE conname = 'orders_assigned_master_id_fkey'
+                ) THEN
+                    ALTER TABLE orders
+                    ADD CONSTRAINT orders_assigned_master_id_fkey
+                    FOREIGN KEY (assigned_master_id)
+                    REFERENCES masters(id)
+                    ON DELETE SET NULL;
+                END IF;
+            END $$;
+        `);
+    } catch (err) {
+        console.error('❌ Не вдалося підготувати таблицю майстрів:', err.message);
+    }
+}
+
+async function assignMissingOrderMasters() {
+    try {
+        await pool.query(`
+            WITH target_orders AS (
+                SELECT id, ROW_NUMBER() OVER (ORDER BY RANDOM()) AS order_row
+                FROM orders
+                WHERE assigned_master_id IS NULL
+            ),
+            active_masters AS (
+                SELECT
+                    id,
+                    ROW_NUMBER() OVER (ORDER BY RANDOM()) AS master_row,
+                    COUNT(*) OVER () AS master_count
+                FROM masters
+                WHERE is_active = TRUE
+            )
+            UPDATE orders AS o
+            SET assigned_master_id = active_masters.id
+            FROM target_orders
+            JOIN active_masters
+              ON ((target_orders.order_row - 1) % active_masters.master_count) + 1 = active_masters.master_row
+            WHERE o.id = target_orders.id
+        `);
+    } catch (err) {
+        console.error('❌ Не вдалося призначити майстрів для існуючих замовлень:', err.message);
+    }
+}
+
+async function ensureDatabaseSchema() {
+    await ensureOrderCompletionColumns();
+    await ensureMastersSchema();
+    await assignMissingOrderMasters();
+}
+
+ensureDatabaseSchema();
+
+async function getRandomMasterId(client = pool) {
+    const result = await client.query(`
+        SELECT id
+        FROM masters
+        WHERE is_active = TRUE
+        ORDER BY RANDOM()
+        LIMIT 1
+    `);
+
+    return result.rows[0]?.id || null;
+}
+
+async function getOrderMasterFields(orderId, client = pool) {
+    const result = await client.query(`
+        SELECT
+            o.assigned_master_id,
+            m.full_name AS master_name,
+            m.specialization AS master_specialization
+        FROM orders o
+        LEFT JOIN masters m ON m.id = o.assigned_master_id
+        WHERE o.id = $1
+    `, [orderId]);
+
+    return result.rows[0] || {};
+}
 
 // ========== EMAIL ==========
 const emailTransporter = nodemailer.createTransport({
@@ -154,6 +258,9 @@ app.get('/api/orders', authMiddleware, async (req, res) => {
                 o.repair_price,
                 o.labor_price,
                 o.completion_comment,
+                o.assigned_master_id,
+                m.full_name AS master_name,
+                m.specialization AS master_specialization,
                 c.id as client_id,
                 c.full_name,
                 c.phone,
@@ -176,9 +283,10 @@ app.get('/api/orders', authMiddleware, async (req, res) => {
             FROM orders o
             JOIN devices d ON o.device_id = d.id
             JOIN clients c ON d.client_id = c.id
+            LEFT JOIN masters m ON m.id = o.assigned_master_id
             LEFT JOIN order_parts op ON op.order_id = o.id
             LEFT JOIN spare_parts sp ON sp.id = op.part_id
-            GROUP BY o.id, c.id, d.id
+            GROUP BY o.id, c.id, d.id, m.id, m.full_name, m.specialization
             ORDER BY o.id DESC
         `);
         res.json(result.rows);
@@ -200,10 +308,22 @@ app.post('/api/orders', authMiddleware, async (req, res) => {
             [clientResult.rows[0].id, deviceType, brand, model, issueDescription]
         );
         const orderResult = await pool.query(
-            'INSERT INTO orders (device_id, status) VALUES ($1, $2) RETURNING id',
+            `INSERT INTO orders (device_id, status, assigned_master_id)
+             VALUES (
+                $1,
+                $2,
+                (SELECT id FROM masters WHERE is_active = TRUE ORDER BY RANDOM() LIMIT 1)
+             )
+             RETURNING id, status, assigned_master_id`,
             [deviceResult.rows[0].id, 'прийнято']
         );
-        res.json({ id: orderResult.rows[0].id, status: 'прийнято', message: 'Замовлення створено' });
+        const masterFields = await getOrderMasterFields(orderResult.rows[0].id);
+
+        res.json({
+            ...orderResult.rows[0],
+            ...masterFields,
+            message: 'Замовлення створено',
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Помилка створення замовлення' });
@@ -219,10 +339,20 @@ app.put('/api/orders/:id/status', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'Для статусу "Виконано" використовуйте завершення ремонту з ціною.' });
         }
 
-        const result = await pool.query(
-            'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-            [status, id]
-        );
+        const result = status === 'ремонт'
+            ? await pool.query(
+                `UPDATE orders
+                 SET status = $1,
+                     assigned_master_id = COALESCE(assigned_master_id, $2),
+                     updated_at = NOW()
+                 WHERE id = $3
+                 RETURNING *`,
+                [status, await getRandomMasterId(), id]
+            )
+            : await pool.query(
+                'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+                [status, id]
+            );
         
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Замовлення не знайдено' });
@@ -306,7 +436,8 @@ app.put('/api/orders/:id/status', authMiddleware, async (req, res) => {
             await sendEmail(client.email, subject, html);
         }
 
-        res.json(result.rows[0]);
+        const masterFields = await getOrderMasterFields(id);
+        res.json({ ...result.rows[0], ...masterFields });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Помилка оновлення статусу' });
@@ -383,10 +514,11 @@ app.put('/api/orders/:id/complete', authMiddleware, async (req, res) => {
                  labor_price = $1,
                  repair_price = $2,
                  completion_comment = $3,
+                 assigned_master_id = COALESCE(assigned_master_id, $4),
                  updated_at = NOW()
-             WHERE id = $4
-             RETURNING id, status, labor_price, repair_price, completion_comment`,
-            [normalizedLaborPrice, totalRepairPrice, comment || null, id]
+             WHERE id = $5
+             RETURNING id, status, labor_price, repair_price, completion_comment, assigned_master_id`,
+            [normalizedLaborPrice, totalRepairPrice, comment || null, await getRandomMasterId(client), id]
         );
 
         const usedPartsResult = await client.query(`
@@ -439,6 +571,7 @@ app.put('/api/orders/:id/complete', authMiddleware, async (req, res) => {
 
         res.json({
             ...updatedOrder.rows[0],
+            ...(await getOrderMasterFields(id, client)),
             used_parts: usedPartsResult.rows,
         });
     } catch (err) {

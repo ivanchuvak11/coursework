@@ -3,12 +3,10 @@ import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import {
   BarChart3,
-  Bell,
   CircleDollarSign,
   ClipboardList,
   HelpCircle,
   Menu,
-  MessageSquare,
   Moon,
   Package,
   Search,
@@ -216,12 +214,6 @@ const Layout = ({ children, user, onLogout }) => {
           </div>
 
           <div className="topbar-actions">
-            <button className="icon-button" type="button" aria-label="Сповіщення" onClick={() => openDialog('Сповіщення')}>
-              <Bell size={20} strokeWidth={1.8} />
-            </button>
-            <button className="icon-button" type="button" aria-label="Повідомлення" onClick={() => openDialog('Повідомлення')}>
-              <MessageSquare size={20} strokeWidth={1.8} />
-            </button>
             <button
               className="theme-toggle"
               type="button"
@@ -235,7 +227,7 @@ const Layout = ({ children, user, onLogout }) => {
               <img src="/images/avatar.png" alt="" />
               <div>
                 <strong>{user?.username || 'Майстер'}</strong>
-                <span>Адміністратор</span>
+                <span>{user?.role || 'Адміністратор'}</span>
               </div>
               <button className="logout-button" type="button" onClick={onLogout} aria-label="Вийти" title="Вийти">
                 <X size={18} strokeWidth={2} />
@@ -256,10 +248,8 @@ const Layout = ({ children, user, onLogout }) => {
             <h3>{activeDialog}</h3>
             <div className="modal-scroll">
               <div className="about-info">
-                <p>{activeDialog === 'Сповіщення' ? 'Нових критичних сповіщень немає.' : null}</p>
-                <p>{activeDialog === 'Повідомлення' ? 'Непрочитаних повідомлень немає.' : null}</p>
                 <p>{activeDialog === 'Допомога' ? 'Для роботи з системою оберіть розділ у меню або скористайтесь пошуком у верхній панелі.' : null}</p>
-                <p>{!['Сповіщення', 'Повідомлення', 'Допомога'].includes(activeDialog) ? `Розділ "${activeDialog}" підготовлений у меню. Його можна розширити окремою сторінкою, коли буде потрібна логіка та дані.` : null}</p>
+                <p>{activeDialog !== 'Допомога' ? `Розділ "${activeDialog}" підготовлений у меню. Його можна розширити окремою сторінкою, коли буде потрібна логіка та дані.` : null}</p>
               </div>
             </div>
           </div>

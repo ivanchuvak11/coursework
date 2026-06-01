@@ -305,7 +305,8 @@ export default function OrdersList() {
     }
 
     try {
-      await axios.put(`${API_URL}/orders/${order.id}/status`, { status });
+      const response = await axios.put(`${API_URL}/orders/${order.id}/status`, { status });
+      const updatedOrder = { ...order, ...response.data, status: response.data?.status || status };
 
       try {
         await axios.post(`${API_URL}/send-status-sms`, {
@@ -319,8 +320,8 @@ export default function OrdersList() {
         console.info('SMS-сповіщення не відправлено');
       }
 
-      setOrders((currentOrders) => currentOrders.map((item) => (item.id === order.id ? { ...item, status } : item)));
-      setSelectedOrder((currentOrder) => (currentOrder?.id === order.id ? { ...currentOrder, status } : currentOrder));
+      setOrders((currentOrders) => currentOrders.map((item) => (item.id === order.id ? { ...item, ...updatedOrder } : item)));
+      setSelectedOrder((currentOrder) => (currentOrder?.id === order.id ? { ...currentOrder, ...updatedOrder } : currentOrder));
       window.dispatchEvent(new Event('orders-summary-refresh'));
     } catch (error) {
       console.error('Не вдалося оновити статус:', error);
@@ -604,7 +605,7 @@ export default function OrdersList() {
               </tr>
             </thead>
             <tbody>
-              {paginatedOrders.map((order, index) => {
+              {paginatedOrders.map((order) => {
                 const status = getStatusMeta(order.status);
                 const isSelected = activeOrder.id === order.id;
 
@@ -622,7 +623,7 @@ export default function OrdersList() {
                     <td>
                       <span className={`status-badge ${status.className}`}>{status.label}</span>
                     </td>
-                    <td>{((currentPage - 1) * pageSize + index) % 3 === 0 ? '—' : index % 2 === 0 ? 'Олег Т.' : 'Андрій К.'}</td>
+                    <td>{order.master_name || '—'}</td>
                     <td>
                       <select
                         value={order.status}
