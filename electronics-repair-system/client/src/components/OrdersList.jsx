@@ -308,18 +308,6 @@ export default function OrdersList() {
       const response = await axios.put(`${API_URL}/orders/${order.id}/status`, { status });
       const updatedOrder = { ...order, ...response.data, status: response.data?.status || status };
 
-      try {
-        await axios.post(`${API_URL}/send-status-sms`, {
-          phone: order.phone,
-          orderId: order.id,
-          status,
-          clientName: order.full_name,
-          clientEmail: order.email,
-        });
-      } catch {
-        console.info('SMS-сповіщення не відправлено');
-      }
-
       setOrders((currentOrders) => currentOrders.map((item) => (item.id === order.id ? { ...item, ...updatedOrder } : item)));
       setSelectedOrder((currentOrder) => (currentOrder?.id === order.id ? { ...currentOrder, ...updatedOrder } : currentOrder));
       window.dispatchEvent(new Event('orders-summary-refresh'));

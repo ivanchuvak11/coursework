@@ -3,6 +3,7 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const twilio = require('twilio');
 require('dotenv').config();
 
 const app = express();
@@ -203,6 +204,211 @@ async function sendEmail(to, subject, htmlContent) {
     }
 }
 
+// ========== SMS ==========
+function createTwilioClient() {
+    const accountSid = (process.env.TWILIO_ACCOUNT_SID || '').trim();
+    const authToken = (process.env.TWILIO_AUTH_TOKEN || '').trim();
+
+    if (!accountSid || !authToken) return null;
+
+    if (!accountSid.startsWith('AC')) {
+        console.error('SMS не налаштовано: TWILIO_ACCOUNT_SID має починатися з "AC". Перевірте Account SID у Twilio Console.');
+        return null;
+    }
+
+    try {
+        return twilio(accountSid, authToken);
+    } catch (error) {
+        console.error('SMS не налаштовано:', error.message);
+        return null;
+    }
+}
+
+const twilioClient = createTwilioClient();
+
+function normalizeSmsPhone(phone) {
+    const rawPhone = String(phone || '').trim();
+    if (!rawPhone) return '';
+    if (rawPhone.startsWith('+')) return `+${rawPhone.replace(/\D/g, '')}`;
+
+    const digits = rawPhone.replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.startsWith('380')) return `+${digits}`;
+    if (digits.startsWith('0') && digits.length === 10) return `+38${digits}`;
+    if (digits.startsWith('00')) return `+${digits.slice(2)}`;
+    return `+${digits}`;
+}
+
+function buildOrderAcceptedSms({ orderId, device }) {
+    const deviceText = device ? ` (${device})` : '';
+    return `\u0421\u043c\u0430\u0440\u0442 \u043b\u0430\u0439\u0444: \u0432\u0430\u0448\u0435 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f #${orderId}${deviceText} \u043f\u0440\u0438\u0439\u043d\u044f\u0442\u043e. \u041c\u0438 \u043f\u043e\u0432\u0456\u0434\u043e\u043c\u0438\u043c\u043e, \u043a\u043e\u043b\u0438 \u0440\u0435\u043c\u043e\u043d\u0442 \u0431\u0443\u0434\u0435 \u0432\u0438\u043a\u043e\u043d\u0430\u043d\u043e.`;
+}
+
+function buildOrderCompletedSms({ orderId, device, paymentAmount }) {
+    const deviceText = device ? ` (${device})` : '';
+    const paymentText = Number(paymentAmount || 0) > 0
+        ? ` \u0414\u043e \u043e\u043f\u043b\u0430\u0442\u0438: ${formatEmailCurrency(paymentAmount)}.`
+        : '';
+    return `\u0421\u043c\u0430\u0440\u0442 \u043b\u0430\u0439\u0444: \u0440\u0435\u043c\u043e\u043d\u0442 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f #${orderId}${deviceText} \u0432\u0438\u043a\u043e\u043d\u0430\u043d\u043e.${paymentText} \u041c\u043e\u0436\u0435\u0442\u0435 \u0437\u0430\u0431\u0440\u0430\u0442\u0438 \u043f\u0440\u0438\u0441\u0442\u0440\u0456\u0439.`;
+}
+
+async function sendSms(to, message) {
+    const normalizedPhone = normalizeSmsPhone(to);
+    const sender = process.env.TWILIO_MESSAGING_SERVICE_SID
+        ? { messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID }
+        : { from: process.env.TWILIO_PHONE_NUMBER };
+
+    if (!twilioClient || (!process.env.TWILIO_PHONE_NUMBER && !process.env.TWILIO_MESSAGING_SERVICE_SID)) {
+        console.warn('SMS \u043d\u0435 \u0432\u0456\u0434\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043e: \u043d\u0435 \u043d\u0430\u043b\u0430\u0448\u0442\u043e\u0432\u0430\u043d\u043e Twilio');
+        return false;
+    }
+
+    if (!normalizedPhone) {
+        console.warn('SMS \u043d\u0435 \u0432\u0456\u0434\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043e: \u043d\u0435\u0432\u0456\u0440\u043d\u0438\u0439 \u043d\u043e\u043c\u0435\u0440');
+        return false;
+    }
+
+    try {
+        const result = await twilioClient.messages.create({
+            body: message,
+            to: normalizedPhone,
+            ...sender
+        });
+        console.log(`SMS \u0432\u0456\u0434\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043e: ${result.sid}`);
+        return true;
+    } catch (error) {
+        console.error('SMS \u043d\u0435 \u0432\u0456\u0434\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043e:', error.message);
+        return false;
+    }
+}
+
+function escapeEmailHtml(value = '') {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function legacyUtf8Text(text) {
+    return Buffer.from(text, 'utf8').toString('latin1');
+}
+
+function isRepairStatus(status, text) {
+    return status === text || status === legacyUtf8Text(text);
+}
+
+function formatEmailCurrency(amount) {
+    const value = Number(amount || 0);
+    return `${value.toLocaleString('uk-UA', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    })} \u0433\u0440\u043d`;
+}
+
+function buildRepairEmailTemplate({
+    clientName,
+    orderId,
+    device,
+    statusLabel,
+    statusColor = '#2563eb',
+    title,
+    message,
+    nextStep,
+    paymentAmount,
+    isComplete = false
+}) {
+    const safeClientName = escapeEmailHtml(clientName || '\u043a\u043b\u0456\u0454\u043d\u0442\u0435');
+    const safeDevice = escapeEmailHtml(device || '\u041d\u0435 \u0432\u043a\u0430\u0437\u0430\u043d\u043e');
+    const safeStatus = escapeEmailHtml(statusLabel || '\u041e\u043d\u043e\u0432\u043b\u0435\u043d\u043e');
+    const safeTitle = escapeEmailHtml(title || '\u041e\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u0440\u0435\u043c\u043e\u043d\u0442\u0443');
+    const safeNextStep = escapeEmailHtml(nextStep || '\u041c\u0438 \u043f\u043e\u0432\u0456\u0434\u043e\u043c\u0438\u043c\u043e \u043f\u0440\u043e \u043d\u0430\u0441\u0442\u0443\u043f\u043d\u0435 \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u044f');
+    const hasPayment = paymentAmount !== undefined && paymentAmount !== null && Number(paymentAmount) > 0;
+    const safePaymentAmount = formatEmailCurrency(paymentAmount);
+
+    return `
+        <div style="margin:0; padding:0; background:#eef8f6; font-family:Arial, 'Segoe UI', sans-serif; color:#29405a;">
+            <div style="display:none; max-height:0; overflow:hidden; opacity:0;">
+                \u041e\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f #${orderId} \u0432 \u0441\u0435\u0440\u0432\u0456\u0441\u043d\u043e\u043c\u0443 \u0446\u0435\u043d\u0442\u0440\u0456 \u0421\u043c\u0430\u0440\u0442 \u043b\u0430\u0439\u0444.
+            </div>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse; background:#eef8f6;">
+                <tr>
+                    <td align="center" style="padding:32px 12px;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse; max-width:660px;">
+                            <tr>
+                                <td style="background:#ffffff; border:1px solid #cfe1e5; border-bottom:none; border-radius:18px 18px 0 0; padding:0;">
+                                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+                                        <tr>
+                                            <td style="padding:24px 28px 18px;">
+                                                <div style="color:#0d9488; font-size:22px; line-height:1.1; font-weight:700;">\u0421\u043c\u0430\u0440\u0442</div>
+                                                <div style="color:#10233f; font-size:15px; line-height:1.1; font-weight:600;">\u043b\u0430\u0439\u0444</div>
+                                            </td>
+                                            <td align="right" style="padding:26px 28px 18px;">
+                                                <div style="display:inline-block; background:${isComplete ? '#dcfce7' : '#ccfbf1'}; color:${isComplete ? '#166534' : '#0d9488'}; border:1px solid ${isComplete ? '#86efac' : '#5eead4'}; border-radius:999px; padding:9px 14px; font-size:13px; font-weight:600;">
+                                                    #${orderId}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="background:#ffffff; border:1px solid #cfe1e5; border-top:none; border-radius:0 0 18px 18px; padding:0 28px 28px; box-shadow:0 12px 32px rgba(15, 78, 92, .08);">
+                                    <div style="background:#e6f3f1; border:1px solid #cfe1e5; border-radius:14px; padding:22px; margin:0 0 20px;">
+                                        <h2 style="margin:0 0 10px; color:#10233f; font-size:25px; line-height:1.25; font-weight:700;">${safeTitle}</h2>
+                                        <p style="margin:0; color:#63768c; font-size:15px; line-height:1.65;">
+                                            \u0412\u0456\u0442\u0430\u0454\u043c\u043e, <strong style="color:#10233f; font-weight:600;">${safeClientName}</strong>. ${message}
+                                        </p>
+                                    </div>
+
+                                    ${hasPayment ? `
+                                    <div style="background:#0d9488; border:1px solid #0f766e; border-radius:16px; padding:20px 22px; margin:0 0 18px;">
+                                        <div style="color:#ccfbf1; font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px;">\u0414\u043e \u043e\u043f\u043b\u0430\u0442\u0438</div>
+                                        <div style="color:#ffffff; font-size:32px; line-height:1.1; font-weight:700;">${safePaymentAmount}</div>
+                                    </div>
+                                    ` : ''}
+
+                                    <p style="margin:0 0 10px; color:#10233f; font-size:15px; font-weight:600;">
+                                        \u0414\u0435\u0442\u0430\u043b\u0456 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f
+                                    </p>
+
+                                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse; background:#ffffff; border:1px solid #cfe1e5; border-radius:14px; margin:0 0 20px;">
+                                        <tr>
+                                            <td style="padding:14px 16px; color:#63768c; font-size:14px; border-bottom:1px solid #e3eef0;">\u041f\u043e\u0442\u043e\u0447\u043d\u0438\u0439 \u0441\u0442\u0430\u0442\u0443\u0441</td>
+                                            <td align="right" style="padding:14px 16px; border-bottom:1px solid #e3eef0;">
+                                                <span style="display:inline-block; background:${statusColor}; color:#ffffff; border-radius:999px; padding:8px 14px; font-size:13px; font-weight:600;">${safeStatus}</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:14px 16px; color:#63768c; font-size:14px; border-bottom:1px solid #e3eef0;">\u041d\u043e\u043c\u0435\u0440 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f</td>
+                                            <td align="right" style="padding:14px 16px; color:#10233f; font-size:14px; font-weight:600; border-bottom:1px solid #e3eef0;">#${orderId}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:14px 16px; color:#63768c; font-size:14px; border-bottom:1px solid #e3eef0;">\u041f\u0440\u0438\u0441\u0442\u0440\u0456\u0439</td>
+                                            <td align="right" style="padding:14px 16px; color:#10233f; font-size:14px; font-weight:600; border-bottom:1px solid #e3eef0;">${safeDevice}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:14px 16px; color:#63768c; font-size:14px;">\u0429\u043e \u0434\u0430\u043b\u0456</td>
+                                            <td align="right" style="padding:14px 16px; color:#10233f; font-size:14px; font-weight:600;">${safeNextStep}</td>
+                                        </tr>
+                                    </table>
+
+                                    <div style="background:#ccfbf1; border:1px solid #5eead4; border-radius:12px; padding:16px 18px;">
+                                        <div style="color:#10233f; font-size:15px; font-weight:600; margin-bottom:5px;">\u0414\u044f\u043a\u0443\u0454\u043c\u043e, \u0449\u043e \u043e\u0431\u0440\u0430\u043b\u0438 \u0421\u043c\u0430\u0440\u0442 \u043b\u0430\u0439\u0444</div>
+                                        <div style="color:#63768c; font-size:13px; line-height:1.55;">\u0426\u0435\u0439 \u043b\u0438\u0441\u0442 \u0441\u0444\u043e\u0440\u043c\u043e\u0432\u0430\u043d\u043e \u0430\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u043d\u043e. \u042f\u043a\u0449\u043e \u043c\u0430\u0454\u0442\u0435 \u043f\u0438\u0442\u0430\u043d\u043d\u044f, \u0437\u0432\u0435\u0440\u043d\u0456\u0442\u044c\u0441\u044f \u0434\u043e \u0441\u0435\u0440\u0432\u0456\u0441\u043d\u043e\u0433\u043e \u0446\u0435\u043d\u0442\u0440\u0443.</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    `;
+}
+
 // ========== JWT ==========
 const JWT_SECRET = 'repairmaster-secret-key-2024';
 
@@ -318,6 +524,15 @@ app.post('/api/orders', authMiddleware, async (req, res) => {
             [deviceResult.rows[0].id, 'прийнято']
         );
         const masterFields = await getOrderMasterFields(orderResult.rows[0].id);
+        const createdOrderId = orderResult.rows[0].id;
+        const deviceText = `${brand || ''} ${model || ''}`.trim();
+
+        if (clientPhone) {
+            await sendSms(clientPhone, buildOrderAcceptedSms({
+                orderId: createdOrderId,
+                device: deviceText
+            }));
+        }
 
         res.json({
             ...orderResult.rows[0],
@@ -360,7 +575,7 @@ app.put('/api/orders/:id/status', authMiddleware, async (req, res) => {
 
         // Отримуємо email клієнта
         const clientResult = await pool.query(`
-            SELECT c.email, c.full_name, d.brand, d.model
+            SELECT c.email, c.phone, c.full_name, d.brand, d.model, o.repair_price
             FROM orders o
             JOIN devices d ON o.device_id = d.id
             JOIN clients c ON d.client_id = c.id
@@ -370,7 +585,7 @@ app.put('/api/orders/:id/status', authMiddleware, async (req, res) => {
         const client = clientResult.rows[0];
 
         // Відправляємо email якщо є адреса
-        if (client && client.email) {
+        if (client && (client.email || client.phone)) {
             const statusText = {
                 'прийнято': 'прийнято в роботу',
                 'діагностика': 'на діагностиці',
@@ -383,57 +598,36 @@ app.put('/api/orders/:id/status', authMiddleware, async (req, res) => {
                 ? `✅ Замовлення #${id} виконано!`
                 : `📋 Зміна статусу замовлення #${id}`;
 
-            const html = `
-                <div style="margin:0; padding:0; background:#eef8f6; font-family:Arial, 'Segoe UI', sans-serif; color:#10233f;">
-                    <div style="max-width:640px; margin:0 auto; padding:28px 14px;">
-                        <div style="background:linear-gradient(135deg,#0d9488,#2563eb); border-radius:18px 18px 0 0; padding:30px 28px; color:#ffffff;">
-                            <div style="font-size:13px; letter-spacing:1.8px; text-transform:uppercase; opacity:.9;">Сервісний центр</div>
-                            <h1 style="margin:8px 0 0; font-size:30px; line-height:1.15;">Смарт лайф</h1>
-                            <p style="margin:10px 0 0; font-size:15px; opacity:.92;">Оновлення статусу вашого ремонту</p>
-                        </div>
+            const isDoneStatus = isRepairStatus(status, '\u0432\u0438\u043a\u043e\u043d\u0430\u043d\u043e');
+            const isRepairingStatus = isRepairStatus(status, '\u0440\u0435\u043c\u043e\u043d\u0442');
+            const isDiagnosticStatus = isRepairStatus(status, '\u0434\u0456\u0430\u0433\u043d\u043e\u0441\u0442\u0438\u043a\u0430');
 
-                        <div style="background:#ffffff; border:1px solid #cfe1e5; border-top:none; border-radius:0 0 18px 18px; padding:28px; box-shadow:0 18px 45px rgba(15,78,92,.12);">
-                            <p style="margin:0 0 18px; font-size:16px;">Вітаємо, <strong>${client.full_name}</strong>.</p>
-                            <p style="margin:0 0 20px; color:#63768c; font-size:15px; line-height:1.6;">
-                                ${status === 'виконано'
-                                    ? `Ваше замовлення <strong style="color:#10233f;">#${id}</strong> виконано. Пристрій готовий до видачі.`
-                                    : `Статус замовлення <strong style="color:#10233f;">#${id}</strong> було змінено. Нижче актуальна інформація.`}
-                            </p>
+            const deviceText = `${client.brand || ''} ${client.model || ''}`.trim();
+            const statusLabel = isDoneStatus
+                ? '\u0432\u0438\u043a\u043e\u043d\u0430\u043d\u043e'
+                : isRepairingStatus
+                    ? '\u0432 \u0440\u0435\u043c\u043e\u043d\u0442\u0456'
+                    : isDiagnosticStatus
+                        ? '\u043d\u0430 \u0434\u0456\u0430\u0433\u043d\u043e\u0441\u0442\u0438\u0446\u0456'
+                        : statusText[status] || status;
 
-                            <div style="background:#f4fbfa; border:1px solid #d7ebe9; border-radius:14px; padding:18px; margin-bottom:18px;">
-                                <div style="color:#63768c; font-size:13px; margin-bottom:8px;">Поточний статус</div>
-                                <div style="background:${status === 'виконано' ? '#16a34a' : status === 'ремонт' ? '#f59e0b' : status === 'діагностика' ? '#2563eb' : '#0d9488'}; color:#ffffff; border-radius:999px; display:inline-block; font-size:16px; font-weight:700; padding:10px 18px;">
-                                    ${statusText[status] || status}
-                                </div>
-                            </div>
+            if (client.email) {
+                await sendEmail(client.email, subject, buildRepairEmailTemplate({
+                    clientName: client.full_name,
+                    orderId: id,
+                    device: deviceText,
+                    statusLabel,
+                    statusColor: isDoneStatus ? '#16a34a' : isRepairingStatus ? '#f59e0b' : isDiagnosticStatus ? '#2563eb' : '#0d9488',
+                    title: isDoneStatus ? '\u0420\u0435\u043c\u043e\u043d\u0442 \u0432\u0438\u043a\u043e\u043d\u0430\u043d\u043e' : '\u0421\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043e',
+                    message: isDoneStatus
+                        ? `\u0412\u0430\u0448\u0435 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f <strong style="color:#0f172a;">#${id}</strong> \u0432\u0438\u043a\u043e\u043d\u0430\u043d\u043e. \u041f\u0440\u0438\u0441\u0442\u0440\u0456\u0439 \u0433\u043e\u0442\u043e\u0432\u0438\u0439 \u0434\u043e \u0432\u0438\u0434\u0430\u0447\u0456.`
+                        : `\u0421\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f <strong style="color:#0f172a;">#${id}</strong> \u0431\u0443\u043b\u043e \u0437\u043c\u0456\u043d\u0435\u043d\u043e.`,
+                    nextStep: isDoneStatus ? '\u041e\u0447\u0456\u043a\u0443\u0454\u043c\u043e \u0432\u0430\u0441 \u0434\u043b\u044f \u0432\u0438\u0434\u0430\u0447\u0456' : '\u041c\u0438 \u043f\u043e\u0432\u0456\u0434\u043e\u043c\u0438\u043c\u043e \u043f\u0440\u043e \u043d\u0430\u0441\u0442\u0443\u043f\u043d\u0435 \u043e\u043d\u043e\u0432\u043b\u0435\u043d\u043d\u044f',
+                    paymentAmount: client.repair_price,
+                    isComplete: isDoneStatus
+                }));
+            }
 
-                            <table style="width:100%; border-collapse:collapse; margin:0 0 22px;">
-                                <tr>
-                                    <td style="padding:12px 0; color:#63768c; border-bottom:1px solid #e3eef0;">Номер замовлення</td>
-                                    <td style="padding:12px 0; text-align:right; font-weight:700; border-bottom:1px solid #e3eef0;">#${id}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding:12px 0; color:#63768c; border-bottom:1px solid #e3eef0;">Пристрій</td>
-                                    <td style="padding:12px 0; text-align:right; font-weight:700; border-bottom:1px solid #e3eef0;">${client.brand || ''} ${client.model || ''}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding:12px 0; color:#63768c;">Що далі</td>
-                                    <td style="padding:12px 0; text-align:right; font-weight:700;">
-                                        ${status === 'виконано' ? 'Очікуємо вас для видачі' : 'Ми повідомимо про наступне оновлення'}
-                                    </td>
-                                </tr>
-                            </table>
-
-                            <div style="background:#10233f; border-radius:14px; color:#ffffff; padding:18px;">
-                                <div style="font-weight:700; margin-bottom:6px;">Дякуємо, що обрали Смарт лайф</div>
-                                <div style="color:#cbd7e8; font-size:13px; line-height:1.5;">Цей лист сформовано автоматично після зміни статусу замовлення.</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            await sendEmail(client.email, subject, html);
         }
 
         const masterFields = await getOrderMasterFields(id);
@@ -533,7 +727,7 @@ app.put('/api/orders/:id/complete', authMiddleware, async (req, res) => {
 
         try {
             const notificationResult = await pool.query(`
-                SELECT c.email, c.full_name, d.brand, d.model
+                SELECT c.email, c.phone, c.full_name, d.brand, d.model
                 FROM orders o
                 JOIN devices d ON o.device_id = d.id
                 JOIN clients c ON d.client_id = c.id
@@ -541,29 +735,36 @@ app.put('/api/orders/:id/complete', authMiddleware, async (req, res) => {
             `, [id]);
             const notificationClient = notificationResult.rows[0];
 
-            if (notificationClient?.email) {
-                await sendEmail(
+            if (notificationClient?.email || notificationClient?.phone) {
+                const deviceText = `${notificationClient.brand || ''} ${notificationClient.model || ''}`.trim();
+                const completeEmailHtml = buildRepairEmailTemplate({
+                    clientName: notificationClient.full_name,
+                    orderId: id,
+                    device: deviceText,
+                    statusLabel: '\u0432\u0438\u043a\u043e\u043d\u0430\u043d\u043e',
+                    statusColor: '#16a34a',
+                    title: '\u0420\u0435\u043c\u043e\u043d\u0442 \u0432\u0438\u043a\u043e\u043d\u0430\u043d\u043e',
+                    message: `\u0412\u0430\u0448\u0435 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f <strong style="color:#0f172a;">#${id}</strong> \u0432\u0438\u043a\u043e\u043d\u0430\u043d\u043e. \u041f\u0440\u0438\u0441\u0442\u0440\u0456\u0439 \u0433\u043e\u0442\u043e\u0432\u0438\u0439 \u0434\u043e \u0432\u0438\u0434\u0430\u0447\u0456.`,
+                    nextStep: '\u041e\u0447\u0456\u043a\u0443\u0454\u043c\u043e \u0432\u0430\u0441 \u0434\u043b\u044f \u0432\u0438\u0434\u0430\u0447\u0456',
+                    paymentAmount: totalRepairPrice,
+                    isComplete: true
+                });
+
+                if (notificationClient.email) {
+                    await sendEmail(
                     notificationClient.email,
                     `✅ Замовлення #${id} виконано!`,
-                    `
-                        <div style="margin:0; padding:0; background:#eef8f6; font-family:Arial, 'Segoe UI', sans-serif; color:#10233f;">
-                            <div style="max-width:640px; margin:0 auto; padding:28px 14px;">
-                                <div style="background:linear-gradient(135deg,#0d9488,#2563eb); border-radius:18px 18px 0 0; padding:30px 28px; color:#ffffff;">
-                                    <div style="font-size:13px; letter-spacing:1.8px; text-transform:uppercase; opacity:.9;">Смарт лайф</div>
-                                    <h1 style="margin:8px 0 0; font-size:30px; line-height:1.15;">Ремонт виконано</h1>
-                                </div>
-                                <div style="background:#ffffff; border:1px solid #cfe1e5; border-top:none; border-radius:0 0 18px 18px; padding:28px;">
-                                    <p style="margin:0 0 16px;">Вітаємо, <strong>${notificationClient.full_name}</strong>.</p>
-                                    <p style="margin:0 0 18px; color:#63768c; line-height:1.6;">Ваше замовлення <strong>#${id}</strong> виконано. Пристрій готовий до видачі.</p>
-                                    <div style="background:#f4fbfa; border:1px solid #d7ebe9; border-radius:14px; padding:18px;">
-                                        <div style="color:#63768c; font-size:13px; margin-bottom:8px;">Пристрій</div>
-                                        <strong>${notificationClient.brand || ''} ${notificationClient.model || ''}</strong>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `
-                );
+                    completeEmailHtml
+                    );
+                }
+
+                if (notificationClient.phone) {
+                    await sendSms(notificationClient.phone, buildOrderCompletedSms({
+                        orderId: id,
+                        device: deviceText,
+                        paymentAmount: totalRepairPrice
+                    }));
+                }
             }
         } catch (emailError) {
             console.error('Email про завершення не відправлено:', emailError.message);
@@ -766,6 +967,18 @@ app.put('/api/clients/:id', authMiddleware, async (req, res) => {
     }
 });
 
+app.post('/api/send-status-sms', authMiddleware, async (req, res) => {
+    const { phone, orderId, type, device, paymentAmount } = req.body;
+    if (!phone) return res.status(400).json({ error: '\u0412\u043a\u0430\u0436\u0456\u0442\u044c \u0442\u0435\u043b\u0435\u0444\u043e\u043d' });
+
+    const message = type === 'completed'
+        ? buildOrderCompletedSms({ orderId, device, paymentAmount })
+        : buildOrderAcceptedSms({ orderId, device });
+    const success = await sendSms(phone, message);
+
+    res.json({ success });
+});
+
 // ========== ТЕСТ ==========
 app.get('/api/test', (req, res) => {
     res.json({ message: 'Сервер працює!', email: process.env.EMAIL_USER ? '✅' : '❌' });
@@ -778,10 +991,21 @@ app.post('/api/test-email', async (req, res) => {
     res.json({ success: result });
 });
 
+app.post('/api/test-sms', async (req, res) => {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ error: '\u0412\u043a\u0430\u0436\u0456\u0442\u044c \u0442\u0435\u043b\u0435\u0444\u043e\u043d' });
+    const result = await sendSms(phone, buildOrderAcceptedSms({
+        orderId: 1,
+        device: 'test'
+    }));
+    res.json({ success: result });
+});
+
 // ========== ЗАПУСК ==========
 const PORT = 5000;
 app.listen(PORT, () => {
     console.log(`\n🚀 Сервер на http://localhost:${PORT}`);
     console.log(`📧 Email: ${process.env.EMAIL_USER ? '✅' : '❌'}`);
+    console.log(`SMS: ${twilioClient ? '✅' : '❌'}`);
     console.log(`📡 Тест: http://localhost:${PORT}/api/test\n`);
 });
