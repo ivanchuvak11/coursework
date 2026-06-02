@@ -8,21 +8,23 @@ import OrdersList from './components/OrdersList';
 import NewOrderForm from './components/NewOrderForm';
 import PartsInventory from './components/PartsInventory';
 import { ClientsPage, FinancePage, ReportsPage, SettingsPage } from './components/SectionPages';
+import { isMasterRole } from './utils/accessControl';
 import './App.css';
 
 function AuthenticatedApp({ user, onLogout }) {
   const location = useLocation();
+  const isMaster = isMasterRole(user);
 
   return (
     <ErrorBoundary resetKey={location.pathname}>
       <Layout user={user} onLogout={onLogout}>
         <Routes>
-          <Route path="/" element={<OrdersList />} />
-          <Route path="/new-order" element={<NewOrderForm />} />
-          <Route path="/parts" element={<PartsInventory />} />
+          <Route path="/" element={<OrdersList user={user} />} />
+          {!isMaster && <Route path="/new-order" element={<NewOrderForm />} />}
+          {!isMaster && <Route path="/parts" element={<PartsInventory />} />}
           <Route path="/clients" element={<ClientsPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/finance" element={<FinancePage />} />
+          {!isMaster && <Route path="/reports" element={<ReportsPage />} />}
+          {!isMaster && <Route path="/finance" element={<FinancePage />} />}
           <Route path="/settings" element={<SettingsPage user={user} />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

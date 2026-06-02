@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { CheckCircle2, PlusCircle } from 'lucide-react';
+import logoUrl from '../assets/logo.png';
+import darkLogoUrl from '../assets/darklogo.png';
+import { isAdminRole, isMasterRole } from '../utils/accessControl';
 import '../styles/SharedDark.css';
 import '../styles/OrdersList.css';
 
@@ -225,7 +228,7 @@ function PrintReceipt({ order }) {
   );
 }
 
-export default function OrdersList() {
+export default function OrdersList({ user }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -238,6 +241,10 @@ export default function OrdersList() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [pageSize, setPageSize] = useState(13);
   const [currentPage, setCurrentPage] = useState(1);
+  const isMaster = isMasterRole(user);
+  const canCreateOrder = !isMaster;
+  const canManageClient = !isMaster;
+  const canDeleteOrder = isAdminRole(user);
   const [showDetails, setShowDetails] = useState(true);
   const [parts, setParts] = useState([]);
   const [completionOrder, setCompletionOrder] = useState(null);
@@ -492,8 +499,8 @@ export default function OrdersList() {
           <div className="service-focus-content">
             <div className="service-focus-heading">
               <span className="service-focus-icon">
-                <img className="service-focus-logo service-focus-logo-light" src="/images/logo.png" alt="" aria-hidden="true" />
-                <img className="service-focus-logo service-focus-logo-dark" src="/images/darklogo.png" alt="" aria-hidden="true" />
+                <img className="service-focus-logo service-focus-logo-light" src={logoUrl} alt="" aria-hidden="true" />
+                <img className="service-focus-logo service-focus-logo-dark" src={darkLogoUrl} alt="" aria-hidden="true" />
               </span>
               <div>
                 <h2>
@@ -518,9 +525,11 @@ export default function OrdersList() {
                 </span>
               </div>
             </div>
-            <Link className="service-focus-action" to="/new-order">
-              Створити замовлення <span>+</span>
-            </Link>
+            {canCreateOrder && (
+              <Link className="service-focus-action" to="/new-order">
+                Створити замовлення <span>+</span>
+              </Link>
+            )}
           </div>
         </section>
 
@@ -684,28 +693,36 @@ export default function OrdersList() {
             </div>
             <div>
               <span>Телефон:</span>
-              <EditableField
-                isEditing={editingField === 'phone'}
-                value={activeOrder.phone}
-                editValue={editValue}
-                onEdit={() => handleEditClick('phone', activeOrder.phone)}
-                onChange={setEditValue}
-                onSave={() => updateClientField(activeOrder.client_id, 'phone', editValue)}
-                onCancel={() => setEditingField(null)}
-              />
+              {canManageClient ? (
+                <EditableField
+                  isEditing={editingField === 'phone'}
+                  value={activeOrder.phone}
+                  editValue={editValue}
+                  onEdit={() => handleEditClick('phone', activeOrder.phone)}
+                  onChange={setEditValue}
+                  onSave={() => updateClientField(activeOrder.client_id, 'phone', editValue)}
+                  onCancel={() => setEditingField(null)}
+                />
+              ) : (
+                <strong>{activeOrder.phone || '—'}</strong>
+              )}
             </div>
             <div>
               <span>Email:</span>
-              <EditableField
-                isEditing={editingField === 'email'}
-                type="email"
-                value={activeOrder.email}
-                editValue={editValue}
-                onEdit={() => handleEditClick('email', activeOrder.email)}
-                onChange={setEditValue}
-                onSave={() => updateClientField(activeOrder.client_id, 'email', editValue)}
-                onCancel={() => setEditingField(null)}
-              />
+              {canManageClient ? (
+                <EditableField
+                  isEditing={editingField === 'email'}
+                  type="email"
+                  value={activeOrder.email}
+                  editValue={editValue}
+                  onEdit={() => handleEditClick('email', activeOrder.email)}
+                  onChange={setEditValue}
+                  onSave={() => updateClientField(activeOrder.client_id, 'email', editValue)}
+                  onCancel={() => setEditingField(null)}
+                />
+              ) : (
+                <strong>{activeOrder.email || '—'}</strong>
+              )}
             </div>
           </div>
         </section>
@@ -772,7 +789,9 @@ export default function OrdersList() {
           <h4>Дії</h4>
           <button className="primary-action" type="button" onClick={focusActiveOrder}>Перейти до замовлення</button>
           <button type="button" onClick={printReceipt}>Друк квитанції</button>
-          <button className="danger-action" type="button" onClick={cancelOrder}>Скасувати замовлення</button>
+          {canDeleteOrder && (
+            <button className="danger-action" type="button" onClick={cancelOrder}>Скасувати замовлення</button>
+          )}
         </section>
       </aside>}
 

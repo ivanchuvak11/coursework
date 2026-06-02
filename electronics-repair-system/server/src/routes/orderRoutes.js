@@ -15,6 +15,7 @@ const {
     getRandomMasterId,
 } = require('../services/masterService');
 const { ORDER_STATUSES, isRepairStatus } = require('../utils/repairStatus');
+const { canSeeAllOrders, requireAnyRole } = require('../utils/accessControl');
 const {
     isBlank,
     isPositiveInteger,
@@ -26,6 +27,42 @@ const {
 
 function getDeviceText(orderLike) {
     return `${orderLike.brand || ''} ${orderLike.model || ''}`.trim();
+}
+
+function getOrderListAccess(user) {
+    if (canSeeAllOrders(user)) {
+        return { whereSql: '', params: [] };
+    }
+
+    return {
+        whereSql: 'WHERE m.username = $1',
+        params: [user.username],
+    };
+}
+
+async function userCanAccessOrder(user, orderId, client = pool) {
+    if (canSeeAllOrders(user)) {
+        return true;
+    }
+
+    const result = await client.query(`
+        SELECT 1
+        FROM orders o
+        JOIN masters m ON m.id = o.assigned_master_id
+        WHERE o.id = $1
+          AND m.username = $2
+    `, [Number(orderId), user?.username]);
+
+    return result.rows.length > 0;
+}
+
+async function requireOrderAccess(req, res, orderId, client = pool) {
+    if (await userCanAccessOrder(req.user, orderId, client)) {
+        return true;
+    }
+
+    res.status(403).json({ error: 'Недостатньо прав для цього замовлення' });
+    return false;
 }
 
 async function sendStatusEmail(orderId, status, client) {
@@ -105,6 +142,7 @@ async function sendCompletionNotifications(orderId, totalRepairPrice) {
 module.exports = function createOrderRoutes(authMiddleware) {
     router.get('/', authMiddleware, async (req, res) => {
         try {
+            const access = getOrderListAccess(req.user);
             const result = await pool.query(`
                 SELECT
                     o.id,
@@ -141,9 +179,10 @@ module.exports = function createOrderRoutes(authMiddleware) {
                 LEFT JOIN masters m ON m.id = o.assigned_master_id
                 LEFT JOIN order_parts op ON op.order_id = o.id
                 LEFT JOIN spare_parts sp ON sp.id = op.part_id
+                ${access.whereSql}
                 GROUP BY o.id, c.id, d.id, m.id, m.full_name, m.specialization
                 ORDER BY o.id DESC
-            `);
+            `, access.params);
             res.json(result.rows);
         } catch (err) {
             console.error('Помилка /api/orders:', err.message);
@@ -151,7 +190,7 @@ module.exports = function createOrderRoutes(authMiddleware) {
         }
     });
 
-    router.post('/', authMiddleware, async (req, res) => {
+    router.post('/', authMiddleware, requireAnyRole('адмін', 'менеджер'), async (req, res) => {
         const { clientName, clientPhone, clientEmail, deviceType, brand, model, issueDescription } = req.body;
         const validationErrors = [
             isBlank(clientName) && 'Вкажіть ПІБ клієнта',
@@ -220,6 +259,8 @@ module.exports = function createOrderRoutes(authMiddleware) {
         }
 
         try {
+            if (!(await requireOrderAccess(req, res, id))) return;
+
             if (isRepairStatus(status, 'виконано')) {
                 return res.status(400).json({ error: 'Для статусу "Виконано" використовуйте завершення ремонту з ціною.' });
             }
@@ -287,6 +328,8 @@ module.exports = function createOrderRoutes(authMiddleware) {
         if (completionErrors.some(Boolean)) {
             return sendValidationError(res, completionErrors);
         }
+
+        if (!(await requireOrderAccess(req, res, id))) return;
 
         const client = await pool.connect();
         let partsTotal = 0;
@@ -391,7 +434,7 @@ module.exports = function createOrderRoutes(authMiddleware) {
         }
     });
 
-    router.delete('/:id', authMiddleware, async (req, res) => {
+    router.delete('/:id', authMiddleware, requireAnyRole('адмін'), async (req, res) => {
         const { id } = req.params;
 
         if (!isPositiveInteger(id)) {
@@ -460,6 +503,8 @@ module.exports = function createOrderRoutes(authMiddleware) {
         if (validationErrors.some(Boolean)) {
             return sendValidationError(res, validationErrors);
         }
+
+        if (!(await requireOrderAccess(req, res, id))) return;
 
         const normalizedPartId = Number(partId);
         const normalizedQuantity = Number(quantity);

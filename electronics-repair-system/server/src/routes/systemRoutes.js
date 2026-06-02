@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const { sendEmail } = require('../services/emailService');
+const { requireAnyRole } = require('../utils/accessControl');
 const { isBlank, isValidEmail } = require('../utils/validation');
 
 module.exports = function createSystemRoutes(authMiddleware) {
@@ -7,7 +8,7 @@ module.exports = function createSystemRoutes(authMiddleware) {
         res.json({ message: 'Сервер працює!', email: process.env.EMAIL_USER ? '✅' : '❌' });
     });
 
-    router.post('/test-email', authMiddleware, async (req, res) => {
+    router.post('/test-email', authMiddleware, requireAnyRole('адмін'), async (req, res) => {
         const { email } = req.body;
         if (!isValidEmail(email) || isBlank(email)) {
             return res.status(400).json({ error: 'Вкажіть коректний email' });

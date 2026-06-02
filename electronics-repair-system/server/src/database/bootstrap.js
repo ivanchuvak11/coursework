@@ -70,6 +70,8 @@ async function ensureBaseSchema() {
 }
 
 async function ensureDefaultMasters() {
+    const activeMasterUsernames = DEFAULT_MASTERS.map((master) => master.username);
+
     for (const master of DEFAULT_MASTERS) {
         await pool.query(`
             INSERT INTO masters (full_name, specialization, username)
@@ -80,6 +82,14 @@ async function ensureDefaultMasters() {
                 username = COALESCE(masters.username, EXCLUDED.username)
         `, [master.fullName, master.specialization, master.username]);
     }
+
+    await pool.query(
+        `UPDATE masters
+         SET is_active = FALSE
+         WHERE username IS NULL
+            OR username <> ALL($1::text[])`,
+        [activeMasterUsernames]
+    );
 }
 
 async function ensureDefaultSpareParts() {

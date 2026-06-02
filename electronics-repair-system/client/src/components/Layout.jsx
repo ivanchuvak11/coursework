@@ -15,6 +15,10 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import logoUrl from '../assets/logo.png';
+import darkLogoUrl from '../assets/darklogo.png';
+import avatarUrl from '../assets/avatar.png';
+import { isMasterRole } from '../utils/accessControl';
 import '../styles/Layout.css';
 
 const BRAND_NAME = 'Смарт лайф';
@@ -72,6 +76,9 @@ const Layout = ({ children, user, onLogout }) => {
   const [activeDialog, setActiveDialog] = useState(null);
   const [summaryCounts, setSummaryCounts] = useState({});
   const location = useLocation();
+  const visibleNavItems = isMasterRole(user)
+    ? mainNavItems.filter((item) => ['/', '/clients', '/settings'].includes(item.path))
+    : mainNavItems;
   const todayLabel = new Date()
     .toLocaleDateString('uk-UA', {
       day: 'numeric',
@@ -163,13 +170,13 @@ const Layout = ({ children, user, onLogout }) => {
     <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <Link to="/" className="brand">
-          <img className="brand-mark" src={theme === 'dark' ? '/images/darklogo.png' : '/images/logo.png'} alt="" aria-hidden="true" />
+          <img className="brand-mark" src={theme === 'dark' ? darkLogoUrl : logoUrl} alt="" aria-hidden="true" />
           <span className="brand-main">Смарт</span>
           <span className="brand-sub">лайф</span>
         </Link>
 
         <nav className="sidebar-nav">
-          {mainNavItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <SidebarLink
               key={item.label}
               item={item}
@@ -224,7 +231,7 @@ const Layout = ({ children, user, onLogout }) => {
               <span className="theme-icon">{theme === 'light' ? <Moon size={19} strokeWidth={1.9} /> : <Sun size={19} strokeWidth={1.9} />}</span>
             </button>
             <div className="profile-menu">
-              <img src="/images/avatar.png" alt="" />
+              <img src={avatarUrl} alt="" />
               <div>
                 <strong>{user?.username || 'Майстер'}</strong>
                 <span>{user?.role || 'Адміністратор'}</span>

@@ -163,7 +163,6 @@ const DEFAULT_MASTERS = [
     { fullName: 'Андрій К.', specialization: 'Смартфони та планшети', username: 'master1' },
     { fullName: 'Олег Т.', specialization: 'Ноутбуки та ПК', username: 'master2' },
     { fullName: 'Петро І.', specialization: 'Ігрові консолі', username: 'master3' },
-    { fullName: 'Марина С.', specialization: 'Діагностика електроніки', username: 'master4' },
 ];
 
 const DEFAULT_SPARE_PARTS = [
@@ -179,6 +178,8 @@ const DEFAULT_SPARE_PARTS = [
 const DEFAULT_USERS = [
     { username: 'admin', role: 'адмін' },
     { username: 'master1', role: 'майстер' },
+    { username: 'master2', role: 'майстер' },
+    { username: 'master3', role: 'майстер' },
     { username: 'manager1', role: 'менеджер' },
 ];
 

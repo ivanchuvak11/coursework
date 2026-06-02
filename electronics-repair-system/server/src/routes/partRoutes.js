@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const pool = require('../database/pool');
+const { requireAnyRole } = require('../utils/accessControl');
 const {
     isBlank,
     isPositiveInteger,
@@ -18,7 +19,7 @@ module.exports = function createPartRoutes(authMiddleware) {
         }
     });
 
-    router.post('/', authMiddleware, async (req, res) => {
+    router.post('/', authMiddleware, requireAnyRole('адмін', 'менеджер'), async (req, res) => {
         const { part_name, quantity, price, category, supplier } = req.body;
         const normalizedQuantity = Number(quantity ?? 0);
         const normalizedPrice = Number(price ?? 0);
@@ -50,7 +51,7 @@ module.exports = function createPartRoutes(authMiddleware) {
         }
     });
 
-    router.put('/:id', authMiddleware, async (req, res) => {
+    router.put('/:id', authMiddleware, requireAnyRole('адмін', 'менеджер'), async (req, res) => {
         const { id } = req.params;
         const { quantity } = req.body;
         const validationErrors = [
@@ -75,7 +76,7 @@ module.exports = function createPartRoutes(authMiddleware) {
         }
     });
 
-    router.delete('/:id', authMiddleware, async (req, res) => {
+    router.delete('/:id', authMiddleware, requireAnyRole('адмін'), async (req, res) => {
         const { id } = req.params;
 
         if (!isPositiveInteger(id)) {

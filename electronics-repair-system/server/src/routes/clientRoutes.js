@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const pool = require('../database/pool');
 const { normalizeSmsPhone } = require('../services/smsService');
+const { requireAnyRole } = require('../utils/accessControl');
 const {
     isBlank,
     isPositiveInteger,
@@ -10,7 +11,7 @@ const {
 } = require('../utils/validation');
 
 module.exports = function createClientRoutes(authMiddleware) {
-    router.put('/:id', authMiddleware, async (req, res) => {
+    router.put('/:id', authMiddleware, requireAnyRole('адмін', 'менеджер'), async (req, res) => {
         const { id } = req.params;
         const { phone, email } = req.body;
         const validationErrors = [
