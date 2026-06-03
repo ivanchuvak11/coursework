@@ -247,7 +247,8 @@ export default function OrdersList({ user }) {
   const canManageClient = !isMaster;
   const canDeleteOrder = isAdminRole(user);
   const canAssignMaster = isAdminRole(user) || isManagerRole(user);
-  const [showDetails, setShowDetails] = useState(true);
+  const statusOptions = isMaster ? ORDER_STATUSES.filter((status) => status.value !== ISSUED_STATUS) : ORDER_STATUSES;
+  const [showDetails, setShowDetails] = useState(false);
   const [parts, setParts] = useState([]);
   const [masters, setMasters] = useState([]);
   const [completionOrder, setCompletionOrder] = useState(null);
@@ -322,6 +323,33 @@ export default function OrdersList({ user }) {
   useEffect(() => {
     setCurrentPage(1);
   }, [filterStatus, pageSize, search]);
+
+  useEffect(() => {
+    if (selectedOrder && !orders.some((order) => order.id === selectedOrder.id)) {
+      setSelectedOrder(null);
+      setShowDetails(false);
+    }
+  }, [orders, selectedOrder]);
+
+  useEffect(() => {
+    if (!completionOrder) return undefined;
+
+    const scrollY = window.scrollY;
+    const previousBodyPosition = document.body.style.position;
+    const previousBodyTop = document.body.style.top;
+    const previousBodyWidth = document.body.style.width;
+
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+
+    return () => {
+      document.body.style.position = previousBodyPosition;
+      document.body.style.top = previousBodyTop;
+      document.body.style.width = previousBodyWidth;
+      window.scrollTo(0, scrollY);
+    };
+  }, [completionOrder]);
 
   const openCompletionDialog = (order) => {
     const existingParts = Array.isArray(order.used_parts) && order.used_parts.length
@@ -500,9 +528,10 @@ export default function OrdersList({ user }) {
   const paginatedOrders = sortedOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const visibleFrom = sortedOrders.length ? (currentPage - 1) * pageSize + 1 : 0;
   const visibleTo = Math.min(currentPage * pageSize, sortedOrders.length);
-  const activeOrder = selectedOrder || paginatedOrders[0] || sortedOrders[0] || orders[0] || FALLBACK_ORDER;
-  const activeStatus = getStatusMeta(activeOrder.status);
-  const activeStatusHistory = Array.isArray(activeOrder.status_history) ? activeOrder.status_history : [];
+  const activeOrder = selectedOrder;
+  const printableOrder = activeOrder || FALLBACK_ORDER;
+  const activeStatus = getStatusMeta(activeOrder?.status);
+  const activeStatusHistory = Array.isArray(activeOrder?.status_history) ? activeOrder.status_history : [];
   const completionPartsTotal = completionParts.reduce((total, usedPart) => {
     const stockPart = parts.find((part) => String(part.id) === String(usedPart.partId));
     return total + Number(stockPart?.price || 0) * Number(usedPart.quantity || 0);
@@ -517,6 +546,7 @@ export default function OrdersList({ user }) {
       await axios.delete(`${API_URL}/orders/${activeOrder.id}`);
       setOrders((currentOrders) => currentOrders.filter((order) => order.id !== activeOrder.id));
       setSelectedOrder(null);
+      setShowDetails(false);
       window.dispatchEvent(new Event('orders-summary-refresh'));
       alert('Замовлення повністю видалено з бази даних.');
     } catch (error) {
@@ -537,8 +567,10 @@ export default function OrdersList({ user }) {
     return <div className="loading">Завантаження...</div>;
   }
 
+  const isDetailsVisible = showDetails && Boolean(activeOrder);
+
   return (
-    <div className={`orders-page repair-dashboard ${showDetails ? '' : 'details-collapsed'}`}>
+    <div className={`orders-page repair-dashboard ${isDetailsVisible ? '' : 'details-collapsed'}`}>
       <section className="orders-main-panel">
         <section className="service-focus-banner" aria-label="Сервісний фокус">
           <div className="service-focus-content">
@@ -649,7 +681,7 @@ export default function OrdersList({ user }) {
             <tbody>
               {paginatedOrders.map((order) => {
                 const status = getStatusMeta(order.status);
-                const isSelected = activeOrder.id === order.id;
+                const isSelected = selectedOrder?.id === order.id;
 
                 return (
                   <tr className={isSelected ? 'selected' : ''} key={order.id} onClick={() => { setSelectedOrder(order); setShowDetails(true); }}>
@@ -692,7 +724,7 @@ export default function OrdersList({ user }) {
                         onChange={(event) => updateStatus(order, event.target.value)}
                         aria-label="Змінити статус"
                       >
-                        {ORDER_STATUSES.map((item) => (
+                        {statusOptions.map((item) => (
                           <option key={item.value} value={item.value}>
                             {item.label}
                           </option>
@@ -725,7 +757,7 @@ export default function OrdersList({ user }) {
         </div>
       </section>
 
-      {showDetails && <aside className="order-details-panel">
+      {isDetailsVisible && <aside className="order-details-panel">
         <div className="details-header">
           <h2>Деталі замовлення</h2>
           <button type="button" aria-label="Закрити" onClick={() => setShowDetails(false)}>×</button>
@@ -905,7 +937,7 @@ export default function OrdersList({ user }) {
 
         <section className="details-actions">
           <h4>Дії</h4>
-          {activeOrder.status === COMPLETED_STATUS && (
+          {canAssignMaster && activeOrder.status === COMPLETED_STATUS && (
             <button className="primary-action issued-action" type="button" onClick={() => updateStatus(activeOrder, ISSUED_STATUS)}>
               Видати клієнту
             </button>
@@ -1011,7 +1043,7 @@ export default function OrdersList({ user }) {
         </div>
       )}
 
-      <PrintReceipt order={activeOrder} />
+      <PrintReceipt order={printableOrder} />
     </div>
   );
 }

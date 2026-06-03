@@ -9,7 +9,12 @@ const createClientRoutes = require('./routes/clientRoutes');
 const createMasterRoutes = require('./routes/masterRoutes');
 const createSystemRoutes = require('./routes/systemRoutes');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'repairmaster-secret-key-2024';
+const JWT_SECRET = (process.env.JWT_SECRET || '').trim();
+
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET має бути заданий у server/.env і містити щонайменше 32 символи');
+}
+
 const authMiddleware = createAuthMiddleware(JWT_SECRET);
 
 function createApp() {
