@@ -4,7 +4,9 @@ const { createAuthMiddleware } = require('./middleware/auth');
 const createAuthRoutes = require('./routes/authRoutes');
 const createOrderRoutes = require('./routes/orderRoutes');
 const createPartRoutes = require('./routes/partRoutes');
+const createPartRequestRoutes = require('./routes/partRequestRoutes');
 const createClientRoutes = require('./routes/clientRoutes');
+const createMasterRoutes = require('./routes/masterRoutes');
 const createSystemRoutes = require('./routes/systemRoutes');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'repairmaster-secret-key-2024';
@@ -19,7 +21,9 @@ function createApp() {
     app.use('/api/auth', createAuthRoutes(authMiddleware, JWT_SECRET));
     app.use('/api/orders', createOrderRoutes(authMiddleware));
     app.use('/api/parts', createPartRoutes(authMiddleware));
+    app.use('/api/part-requests', createPartRequestRoutes(authMiddleware));
     app.use('/api/clients', createClientRoutes(authMiddleware));
+    app.use('/api/masters', createMasterRoutes(authMiddleware));
     app.use('/api', createSystemRoutes(authMiddleware));
 
     return app;

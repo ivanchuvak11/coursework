@@ -488,6 +488,15 @@
   max-width: 145px;
 }
 
+.orders-table .master-select {
+  max-width: 170px;
+}
+
+.details-master-select {
+  max-width: 190px;
+  width: 100%;
+}
+
 .orders-footer-row {
   align-items: center;
   color: var(--text-muted);
@@ -801,12 +810,46 @@
   font: inherit;
 }
 
+.details-actions .issued-action {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+.details-actions .issued-action:hover {
+  background: #15803d;
+  border-color: #15803d;
+}
+
 :root[data-theme='dark'] .details-actions .primary-action {
   border-color: #e5e7eb;
 }
 
 .details-actions .danger-action {
   color: var(--danger);
+}
+
+.status-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.status-history-item {
+  border-left: 3px solid var(--accent);
+  display: grid;
+  gap: 4px;
+  padding-left: 12px;
+}
+
+.status-history-item strong {
+  color: var(--text-strong);
+  font-family: var(--font-accent);
+  font-size: 0.96rem;
+}
+
+.status-history-item span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
 .completion-overlay {

@@ -52,6 +52,15 @@
   margin-bottom: 16px;
 }
 
+.section-tools label {
+  color: var(--text-muted);
+  display: grid;
+  font-family: var(--font-accent);
+  font-size: 0.92rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
 .section-tools input,
 .finance-calculator input {
   background: var(--input-bg);
@@ -66,6 +75,19 @@
 .section-tools input {
   max-width: 420px;
   width: 100%;
+}
+
+.section-tools button {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-strong);
+  cursor: pointer;
+  font-family: var(--font-accent);
+  font-size: 0.96rem;
+  font-weight: 800;
+  min-height: 42px;
+  padding: 0 14px;
 }
 
 .section-tools input:focus,
@@ -137,6 +159,21 @@
   margin-bottom: 18px;
 }
 
+.report-filter-card {
+  margin-bottom: 18px;
+}
+
+.report-tools {
+  align-items: end;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(150px, 220px)) minmax(160px, 1fr) auto;
+  margin-bottom: 0;
+}
+
+.report-tools input {
+  max-width: none;
+}
+
 .metric-card {
   padding: 18px;
 }
@@ -162,6 +199,10 @@
 
 .two-columns {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.report-secondary-grid {
+  margin-top: 18px;
 }
 
 .report-list {
@@ -193,6 +234,20 @@
   color: var(--text-strong);
   font-family: var(--font-accent);
   font-size: 1.02rem;
+}
+
+.empty-report,
+.report-note {
+  color: var(--text-muted);
+  font-size: 0.96rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.report-note {
+  border-top: 1px solid var(--border);
+  margin-top: 14px;
+  padding-top: 12px;
 }
 
 .finance-calculator {
@@ -264,6 +319,10 @@
   .two-columns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .report-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -279,5 +338,9 @@
   .section-tools {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .report-tools {
+    display: flex;
   }
 }

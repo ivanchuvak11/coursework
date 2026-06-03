@@ -74,13 +74,12 @@ async function ensureDefaultMasters() {
 
     for (const master of DEFAULT_MASTERS) {
         await pool.query(`
-            INSERT INTO masters (full_name, specialization, username)
-            VALUES ($1, $2, $3)
+            INSERT INTO masters (full_name, username)
+            VALUES ($1, $2)
             ON CONFLICT (full_name) DO UPDATE
-            SET specialization = EXCLUDED.specialization,
-                is_active = TRUE,
+            SET is_active = TRUE,
                 username = COALESCE(masters.username, EXCLUDED.username)
-        `, [master.fullName, master.specialization, master.username]);
+        `, [master.fullName, master.username]);
     }
 
     await pool.query(

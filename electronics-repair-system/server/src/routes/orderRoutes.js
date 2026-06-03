@@ -65,6 +65,27 @@ async function requireOrderAccess(req, res, orderId, client = pool) {
     return false;
 }
 
+async function recordStatusHistory(orderId, oldStatus, newStatus, changedBy, client = pool) {
+    if (oldStatus === newStatus) return;
+
+    await client.query(
+        `INSERT INTO order_status_history (order_id, old_status, new_status, changed_by)
+         VALUES ($1, $2, $3, $4)`,
+        [Number(orderId), oldStatus || null, newStatus, changedBy || null]
+    );
+}
+
+async function getStatusHistory(orderId, client = pool) {
+    const result = await client.query(`
+        SELECT id, old_status, new_status, changed_by, changed_at
+        FROM order_status_history
+        WHERE order_id = $1
+        ORDER BY changed_at DESC, id DESC
+    `, [Number(orderId)]);
+
+    return result.rows;
+}
+
 async function sendStatusEmail(orderId, status, client) {
     if (!client?.email) return;
 
@@ -153,7 +174,6 @@ module.exports = function createOrderRoutes(authMiddleware) {
                     o.completion_comment,
                     o.assigned_master_id,
                     m.full_name AS master_name,
-                    m.specialization AS master_specialization,
                     c.id as client_id,
                     c.full_name,
                     c.phone,
@@ -162,6 +182,20 @@ module.exports = function createOrderRoutes(authMiddleware) {
                     d.brand,
                     d.model,
                     d.issue_description,
+                    COALESCE((
+                        SELECT json_agg(
+                            json_build_object(
+                                'id', osh.id,
+                                'old_status', osh.old_status,
+                                'new_status', osh.new_status,
+                                'changed_by', osh.changed_by,
+                                'changed_at', osh.changed_at
+                            )
+                            ORDER BY osh.changed_at DESC
+                        )
+                        FROM order_status_history osh
+                        WHERE osh.order_id = o.id
+                    ), '[]') AS status_history,
                     COALESCE(
                         json_agg(
                             json_build_object(
@@ -180,7 +214,7 @@ module.exports = function createOrderRoutes(authMiddleware) {
                 LEFT JOIN order_parts op ON op.order_id = o.id
                 LEFT JOIN spare_parts sp ON sp.id = op.part_id
                 ${access.whereSql}
-                GROUP BY o.id, c.id, d.id, m.id, m.full_name, m.specialization
+                GROUP BY o.id, c.id, d.id, m.id, m.full_name
                 ORDER BY o.id DESC
             `, access.params);
             res.json(result.rows);
@@ -229,6 +263,8 @@ module.exports = function createOrderRoutes(authMiddleware) {
             const createdOrderId = orderResult.rows[0].id;
             const deviceText = `${brand || ''} ${model || ''}`.trim();
 
+            await recordStatusHistory(createdOrderId, null, orderResult.rows[0].status, req.user.username);
+
             await sendSms(clientPhone, buildOrderAcceptedSms({
                 orderId: createdOrderId,
                 device: deviceText,
@@ -242,6 +278,66 @@ module.exports = function createOrderRoutes(authMiddleware) {
         } catch (err) {
             console.error(err);
             res.status(500).json({ error: 'Помилка створення замовлення' });
+        }
+    });
+
+    router.get('/:id/history', authMiddleware, async (req, res) => {
+        const { id } = req.params;
+
+        if (!isPositiveInteger(id)) {
+            return sendValidationError(res, ['Некоректний номер замовлення']);
+        }
+
+        try {
+            if (!(await requireOrderAccess(req, res, id))) return;
+
+            res.json(await getStatusHistory(Number(id)));
+        } catch (err) {
+            console.error('Помилка завантаження історії статусів:', err.message);
+            res.status(500).json({ error: 'Помилка завантаження історії статусів' });
+        }
+    });
+
+    router.put('/:id/master', authMiddleware, requireAnyRole('адмін', 'менеджер'), async (req, res) => {
+        const { id } = req.params;
+        const { masterId } = req.body;
+        const validationErrors = [
+            !isPositiveInteger(id) && 'Некоректний номер замовлення',
+            !isPositiveInteger(masterId) && 'Оберіть майстра',
+        ];
+
+        if (validationErrors.some(Boolean)) {
+            return sendValidationError(res, validationErrors);
+        }
+
+        try {
+            const masterResult = await pool.query(
+                'SELECT id FROM masters WHERE id = $1 AND is_active = TRUE',
+                [Number(masterId)]
+            );
+
+            if (masterResult.rows.length === 0) {
+                return res.status(404).json({ error: 'Майстра не знайдено або він неактивний' });
+            }
+
+            const result = await pool.query(
+                `UPDATE orders
+                 SET assigned_master_id = $1,
+                     updated_at = NOW()
+                 WHERE id = $2
+                 RETURNING id, assigned_master_id`,
+                [Number(masterId), Number(id)]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({ error: 'Замовлення не знайдено' });
+            }
+
+            const masterFields = await getOrderMasterFields(Number(id));
+            res.json({ ...result.rows[0], ...masterFields });
+        } catch (err) {
+            console.error('Помилка призначення майстра:', err.message);
+            res.status(500).json({ error: 'Помилка призначення майстра' });
         }
     });
 
@@ -260,6 +356,15 @@ module.exports = function createOrderRoutes(authMiddleware) {
 
         try {
             if (!(await requireOrderAccess(req, res, id))) return;
+
+            const currentOrder = await pool.query(
+                'SELECT id, status FROM orders WHERE id = $1',
+                [Number(id)]
+            );
+
+            if (currentOrder.rows.length === 0) {
+                return res.status(404).json({ error: 'Замовлення не знайдено' });
+            }
 
             if (isRepairStatus(status, 'виконано')) {
                 return res.status(400).json({ error: 'Для статусу "Виконано" використовуйте завершення ремонту з ціною.' });
@@ -284,6 +389,8 @@ module.exports = function createOrderRoutes(authMiddleware) {
                 return res.status(404).json({ error: 'Замовлення не знайдено' });
             }
 
+            await recordStatusHistory(Number(id), currentOrder.rows[0].status, result.rows[0].status, req.user.username);
+
             const clientResult = await pool.query(`
                 SELECT c.email, c.full_name, d.brand, d.model, o.repair_price
                 FROM orders o
@@ -299,7 +406,11 @@ module.exports = function createOrderRoutes(authMiddleware) {
             }
 
             const masterFields = await getOrderMasterFields(Number(id));
-            res.json({ ...result.rows[0], ...masterFields });
+            res.json({
+                ...result.rows[0],
+                ...masterFields,
+                status_history: await getStatusHistory(Number(id)),
+            });
         } catch (err) {
             console.error(err);
             res.status(500).json({ error: 'Помилка оновлення статусу' });
@@ -337,7 +448,7 @@ module.exports = function createOrderRoutes(authMiddleware) {
         try {
             await client.query('BEGIN');
 
-            const orderResult = await client.query('SELECT id FROM orders WHERE id = $1 FOR UPDATE', [Number(id)]);
+            const orderResult = await client.query('SELECT id, status FROM orders WHERE id = $1 FOR UPDATE', [Number(id)]);
 
             if (orderResult.rows.length === 0) {
                 await client.query('ROLLBACK');
@@ -404,6 +515,8 @@ module.exports = function createOrderRoutes(authMiddleware) {
                 [normalizedLaborPrice, totalRepairPrice, comment || null, await getRandomMasterId(client), Number(id)]
             );
 
+            await recordStatusHistory(Number(id), orderResult.rows[0].status, updatedOrder.rows[0].status, req.user.username, client);
+
             const usedPartsResult = await client.query(`
                 SELECT op.part_id, sp.part_name, op.quantity_used, op.price_at_time
                 FROM order_parts op
@@ -424,6 +537,7 @@ module.exports = function createOrderRoutes(authMiddleware) {
                 ...updatedOrder.rows[0],
                 ...(await getOrderMasterFields(Number(id), client)),
                 used_parts: usedPartsResult.rows,
+                status_history: await getStatusHistory(Number(id), client),
             });
         } catch (err) {
             await client.query('ROLLBACK');

@@ -21,7 +21,7 @@ function AuthenticatedApp({ user, onLogout }) {
         <Routes>
           <Route path="/" element={<OrdersList user={user} />} />
           {!isMaster && <Route path="/new-order" element={<NewOrderForm />} />}
-          {!isMaster && <Route path="/parts" element={<PartsInventory />} />}
+          <Route path="/parts" element={<PartsInventory user={user} />} />
           <Route path="/clients" element={<ClientsPage />} />
           {!isMaster && <Route path="/reports" element={<ReportsPage />} />}
           {!isMaster && <Route path="/finance" element={<FinancePage />} />}

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   BarChart3,
+  Bell,
   CircleDollarSign,
   ClipboardList,
   HelpCircle,
@@ -18,7 +19,7 @@ import {
 import logoUrl from '../assets/logo.png';
 import darkLogoUrl from '../assets/darklogo.png';
 import avatarUrl from '../assets/avatar.png';
-import { isMasterRole } from '../utils/accessControl';
+import { isAdminRole, isManagerRole, isMasterRole } from '../utils/accessControl';
 import '../styles/Layout.css';
 
 const BRAND_NAME = 'Смарт лайф';
@@ -39,6 +40,23 @@ const summaryItems = [
   { label: 'Ремонт', status: 'ремонт', className: 'summary-orange' },
   { label: 'Виконано', status: 'виконано', className: 'summary-green' },
 ];
+
+const partRequestStatusLabels = {
+  нове: 'Нова заявка',
+  замовлено: 'Замовлено',
+  закрито: 'Закрито',
+};
+
+function formatTopbarDate(value) {
+  if (!value) return '—';
+
+  return new Date(value).toLocaleString('uk-UA', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 function SidebarLink({ item, isActive, onClick }) {
   const className = `sidebar-link ${isActive ? 'active' : ''}`;
@@ -75,10 +93,15 @@ const Layout = ({ children, user, onLogout }) => {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [activeDialog, setActiveDialog] = useState(null);
   const [summaryCounts, setSummaryCounts] = useState({});
+  const [partRequests, setPartRequests] = useState([]);
+  const [requestsOpen, setRequestsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const canManagePartRequests = isAdminRole(user) || isManagerRole(user);
   const visibleNavItems = isMasterRole(user)
-    ? mainNavItems.filter((item) => ['/', '/clients', '/settings'].includes(item.path))
+    ? mainNavItems.filter((item) => ['/', '/parts', '/clients', '/settings'].includes(item.path))
     : mainNavItems;
+  const newPartRequestsCount = partRequests.filter((request) => request.status === 'нове').length;
   const todayLabel = new Date()
     .toLocaleDateString('uk-UA', {
       day: 'numeric',
@@ -144,6 +167,35 @@ const Layout = ({ children, user, onLogout }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!canManagePartRequests) {
+      return undefined;
+    }
+
+    let isActive = true;
+
+    const fetchPartRequests = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/part-requests`);
+        if (isActive) {
+          setPartRequests(response.data);
+        }
+      } catch (error) {
+        console.error('Не вдалося завантажити заявки на деталі:', error);
+      }
+    };
+
+    fetchPartRequests();
+    window.addEventListener('part-requests-refresh', fetchPartRequests);
+    const intervalId = window.setInterval(fetchPartRequests, 30000);
+
+    return () => {
+      isActive = false;
+      window.removeEventListener('part-requests-refresh', fetchPartRequests);
+      window.clearInterval(intervalId);
+    };
+  }, [canManagePartRequests]);
+
   const toggleTheme = () => {
     setTheme((currentTheme) => (currentTheme === 'light' ? 'dark' : 'light'));
   };
@@ -164,6 +216,37 @@ const Layout = ({ children, user, onLogout }) => {
   const openDialog = (title) => {
     setActiveDialog(title);
     setSidebarOpen(false);
+  };
+
+  const updatePartRequestStatus = async (requestId, status) => {
+    try {
+      const response = await axios.patch(`${API_URL}/part-requests/${requestId}/status`, { status });
+      setPartRequests((currentRequests) =>
+        currentRequests.map((request) => (request.id === requestId ? response.data : request)),
+      );
+
+      if (status === 'замовлено') {
+        const addPartDetail = {
+            partName: response.data.part_name || response.data.requested_part_name || '',
+            quantity: response.data.requested_quantity || '',
+            category: response.data.category || '',
+        };
+
+        if (location.pathname !== '/parts') {
+          navigate('/parts');
+          window.setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('inventory-open-add-part', { detail: addPartDetail }));
+          }, 0);
+        } else {
+          window.dispatchEvent(new CustomEvent('inventory-open-add-part', { detail: addPartDetail }));
+        }
+
+        setRequestsOpen(false);
+      }
+    } catch (error) {
+      console.error('Не вдалося оновити заявку на деталі:', error);
+      alert(error.response?.data?.error || 'Помилка оновлення заявки на деталі');
+    }
   };
 
   return (
@@ -221,6 +304,65 @@ const Layout = ({ children, user, onLogout }) => {
           </div>
 
           <div className="topbar-actions">
+            {canManagePartRequests && (
+              <div className="notification-wrapper">
+                <button
+                  className={`notification-button ${newPartRequestsCount > 0 ? 'has-notifications' : ''}`}
+                  type="button"
+                  onClick={() => setRequestsOpen((isOpen) => !isOpen)}
+                  aria-label="Заявки на деталі"
+                  title="Заявки на деталі"
+                >
+                  <Bell size={19} strokeWidth={1.9} />
+                  {newPartRequestsCount > 0 && <span>{newPartRequestsCount}</span>}
+                </button>
+
+                {requestsOpen && (
+                  <div className="notification-panel">
+                    <div className="notification-panel-header">
+                      <div>
+                        <strong>Заявки на деталі</strong>
+                        <small>{newPartRequestsCount} нових</small>
+                      </div>
+                      <button type="button" onClick={() => setRequestsOpen(false)} aria-label="Закрити">×</button>
+                    </div>
+
+                    <div className="notification-list">
+                      {partRequests.length > 0 ? partRequests.map((request) => (
+                        <article className={`notification-item status-${request.status}`} key={request.id}>
+                          <div className="notification-item-title">
+                            <strong>{request.part_name || request.requested_part_name || 'Нова деталь'}</strong>
+                            <span>{partRequestStatusLabels[request.status] || request.status}</span>
+                          </div>
+                          <p>
+                            {request.requested_quantity} шт. запросив {request.requested_by || 'майстер'}
+                            {request.current_stock !== null && request.current_stock !== undefined ? `, залишок ${request.current_stock} шт.` : ''}
+                          </p>
+                          {request.comment && <small>{request.comment}</small>}
+                          <div className="notification-meta">
+                            <span>{formatTopbarDate(request.created_at)}</span>
+                            {request.status === 'нове' ? (
+                              <div>
+                                <button type="button" onClick={() => updatePartRequestStatus(request.id, 'замовлено')}>
+                                  Замовлено
+                                </button>
+                                <button type="button" onClick={() => updatePartRequestStatus(request.id, 'закрито')}>
+                                  Закрити
+                                </button>
+                              </div>
+                            ) : (
+                              <span>{request.handled_by ? `обробив ${request.handled_by}` : 'оброблено'}</span>
+                            )}
+                          </div>
+                        </article>
+                      )) : (
+                        <p className="notification-empty">Нових заявок на деталі немає.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <button
               className="theme-toggle"
               type="button"

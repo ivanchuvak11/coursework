@@ -16,8 +16,7 @@ async function getOrderMasterFields(orderId, client = pool) {
     const result = await client.query(`
         SELECT
             o.assigned_master_id,
-            m.full_name AS master_name,
-            m.specialization AS master_specialization
+            m.full_name AS master_name
         FROM orders o
         LEFT JOIN masters m ON m.id = o.assigned_master_id
         WHERE o.id = $1

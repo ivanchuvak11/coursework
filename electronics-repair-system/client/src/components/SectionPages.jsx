@@ -153,13 +153,34 @@ export function ClientsPage() {
 
 export function ReportsPage() {
   const { orders, parts, loading } = useDashboardData();
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  const filteredOrders = useMemo(() => orders.filter((order) => {
+    const orderTime = new Date(order.created_at).getTime();
+    if (Number.isNaN(orderTime)) return true;
+
+    if (dateFrom) {
+      const fromTime = new Date(`${dateFrom}T00:00:00`).getTime();
+      if (orderTime < fromTime) return false;
+    }
+
+    if (dateTo) {
+      const toTime = new Date(`${dateTo}T23:59:59`).getTime();
+      if (orderTime > toTime) return false;
+    }
+
+    return true;
+  }), [dateFrom, dateTo, orders]);
 
   const stats = useMemo(() => {
-    const byStatus = orders.reduce((counts, order) => {
+    const completedStatuses = ['виконано', 'видано'];
+    const activeStatuses = ['прийнято', 'діагностика', 'ремонт'];
+    const byStatus = filteredOrders.reduce((counts, order) => {
       counts[order.status] = (counts[order.status] || 0) + 1;
       return counts;
     }, {});
-    const deviceCounts = orders.reduce((counts, order) => {
+    const deviceCounts = filteredOrders.reduce((counts, order) => {
       const device = `${order.brand || ''} ${order.model || ''}`.trim() || 'Не вказано';
       counts[device] = (counts[device] || 0) + 1;
       return counts;
@@ -167,34 +188,87 @@ export function ReportsPage() {
     const topDevices = Object.entries(deviceCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
+    const completedOrders = filteredOrders.filter((order) => completedStatuses.includes(order.status));
+    const masterMap = new Map();
+    const usedPartMap = new Map();
+
+    filteredOrders.forEach((order) => {
+      const masterName = order.master_name || 'Не призначено';
+      const masterStats = masterMap.get(masterName) || { total: 0, completed: 0, revenue: 0 };
+      masterStats.total += 1;
+
+      if (completedStatuses.includes(order.status)) {
+        masterStats.completed += 1;
+        masterStats.revenue += Number(order.repair_price || 0);
+      }
+
+      masterMap.set(masterName, masterStats);
+
+      (order.used_parts || []).forEach((part) => {
+        const partName = part.part_name || 'Деталь';
+        const quantity = Number(part.quantity_used || 0);
+        const partStats = usedPartMap.get(partName) || { quantity: 0, total: 0 };
+        partStats.quantity += quantity;
+        partStats.total += quantity * Number(part.price_at_time || 0);
+        usedPartMap.set(partName, partStats);
+      });
+    });
 
     return {
       byStatus,
       topDevices,
+      activeOrders: filteredOrders.filter((order) => activeStatuses.includes(order.status)).length,
+      completedOrders: completedOrders.length,
+      issuedOrders: filteredOrders.filter((order) => order.status === 'видано').length,
+      revenue: completedOrders.reduce((sum, order) => sum + Number(order.repair_price || 0), 0),
+      masterLoad: [...masterMap.entries()]
+        .map(([name, value]) => ({ name, ...value }))
+        .sort((a, b) => b.total - a.total),
+      usedParts: [...usedPartMap.entries()]
+        .map(([name, value]) => ({ name, ...value }))
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 5),
       lowStock: parts.filter((part) => Number(part.quantity) < 5),
     };
-  }, [orders, parts]);
+  }, [filteredOrders, parts]);
 
   if (loading) return <div className="loading">Завантаження...</div>;
 
   return (
-    <SectionShell title="Звіти" description="Огляд роботи майстерні за поточними даними.">
+    <SectionShell title="Звіти" description="Огляд роботи майстерні за замовленнями, майстрами, доходом і деталями.">
+      <div className="section-card report-filter-card">
+        <div className="section-tools report-tools">
+          <label>
+            Від
+            <input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
+          </label>
+          <label>
+            До
+            <input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
+          </label>
+          <strong>{filteredOrders.length} замовлень у вибірці</strong>
+          <button type="button" onClick={() => { setDateFrom(''); setDateTo(''); }}>
+            Скинути
+          </button>
+        </div>
+      </div>
+
       <div className="metric-grid">
         <article className="metric-card">
-          <span>Усього замовлень</span>
-          <strong>{orders.length}</strong>
+          <span>Усього за період</span>
+          <strong>{filteredOrders.length}</strong>
         </article>
         <article className="metric-card">
           <span>У роботі</span>
-          <strong>{orders.filter((order) => ['прийнято', 'діагностика', 'ремонт'].includes(order.status)).length}</strong>
+          <strong>{stats.activeOrders}</strong>
         </article>
         <article className="metric-card">
-          <span>Виконано</span>
-          <strong>{stats.byStatus['виконано'] || 0}</strong>
+          <span>Виконано / видано</span>
+          <strong>{stats.completedOrders}</strong>
         </article>
         <article className="metric-card">
-          <span>Низький залишок</span>
-          <strong>{stats.lowStock.length}</strong>
+          <span>Дохід за період</span>
+          <strong>{formatMoney(stats.revenue)}</strong>
         </article>
       </div>
 
@@ -213,13 +287,43 @@ export function ReportsPage() {
         <div className="section-card">
           <h2>Популярні пристрої</h2>
           <div className="report-list">
-            {stats.topDevices.map(([device, count]) => (
+            {stats.topDevices.length > 0 ? stats.topDevices.map(([device, count]) => (
               <div key={device}>
                 <span>{device}</span>
                 <strong>{count}</strong>
               </div>
-            ))}
+            )) : <p className="empty-report">Даних за вибраний період немає.</p>}
           </div>
+        </div>
+      </div>
+
+      <div className="section-grid two-columns report-secondary-grid">
+        <div className="section-card">
+          <h2>Завантаження майстрів</h2>
+          <div className="report-list">
+            {stats.masterLoad.length > 0 ? stats.masterLoad.map((master) => (
+              <div key={master.name}>
+                <span>{master.name}</span>
+                <strong>{master.total} / {master.completed} виконано</strong>
+              </div>
+            )) : <p className="empty-report">Немає призначених замовлень.</p>}
+          </div>
+        </div>
+        <div className="section-card">
+          <h2>Деталі та склад</h2>
+          <div className="report-list">
+            {stats.usedParts.length > 0 ? stats.usedParts.map((part) => (
+              <div key={part.name}>
+                <span>{part.name}</span>
+                <strong>{part.quantity} шт. / {formatMoney(part.total)}</strong>
+              </div>
+            )) : <p className="empty-report">Деталі у вибраних замовленнях не використовувалися.</p>}
+          </div>
+          {stats.lowStock.length > 0 && (
+            <p className="report-note">
+              Низький залишок: {stats.lowStock.map((part) => `${part.part_name} (${part.quantity} шт.)`).join(', ')}
+            </p>
+          )}
         </div>
       </div>
     </SectionShell>

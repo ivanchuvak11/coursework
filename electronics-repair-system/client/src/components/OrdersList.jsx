@@ -4,7 +4,7 @@ import axios from 'axios';
 import { CheckCircle2, PlusCircle } from 'lucide-react';
 import logoUrl from '../assets/logo.png';
 import darkLogoUrl from '../assets/darklogo.png';
-import { isAdminRole, isMasterRole } from '../utils/accessControl';
+import { isAdminRole, isManagerRole, isMasterRole } from '../utils/accessControl';
 import '../styles/SharedDark.css';
 import '../styles/OrdersList.css';
 
@@ -18,6 +18,7 @@ const ORDER_STATUSES = [
   { value: 'видано', label: 'Видано', shortLabel: 'Видано', className: 'status-issued' },
 ];
 const COMPLETED_STATUS = ORDER_STATUSES.find((status) => status.className === 'status-complete').value;
+const ISSUED_STATUS = ORDER_STATUSES.find((status) => status.className === 'status-issued').value;
 
 const FALLBACK_ORDER = {
   id: 58,
@@ -245,8 +246,10 @@ export default function OrdersList({ user }) {
   const canCreateOrder = !isMaster;
   const canManageClient = !isMaster;
   const canDeleteOrder = isAdminRole(user);
+  const canAssignMaster = isAdminRole(user) || isManagerRole(user);
   const [showDetails, setShowDetails] = useState(true);
   const [parts, setParts] = useState([]);
+  const [masters, setMasters] = useState([]);
   const [completionOrder, setCompletionOrder] = useState(null);
   const [completionPrice, setCompletionPrice] = useState('');
   const [completionComment, setCompletionComment] = useState('');
@@ -280,6 +283,32 @@ export default function OrdersList({ user }) {
 
     fetchParts();
   }, []);
+
+  useEffect(() => {
+    if (!canAssignMaster) {
+      setMasters([]);
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const fetchMasters = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/masters`);
+        if (isMounted) {
+          setMasters(response.data);
+        }
+      } catch (error) {
+        console.error('Не вдалося завантажити майстрів:', error);
+      }
+    };
+
+    fetchMasters();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [canAssignMaster]);
 
   useEffect(() => {
     const handleSearch = (event) => {
@@ -321,6 +350,21 @@ export default function OrdersList({ user }) {
     } catch (error) {
       console.error('Не вдалося оновити статус:', error);
       alert('Помилка оновлення статусу');
+    }
+  };
+
+  const assignMaster = async (order, masterId) => {
+    if (!masterId) return;
+
+    try {
+      const response = await axios.put(`${API_URL}/orders/${order.id}/master`, { masterId: Number(masterId) });
+      const updatedOrder = { ...order, ...response.data };
+
+      setOrders((currentOrders) => currentOrders.map((item) => (item.id === order.id ? { ...item, ...updatedOrder } : item)));
+      setSelectedOrder((currentOrder) => (currentOrder?.id === order.id ? { ...currentOrder, ...updatedOrder } : currentOrder));
+    } catch (error) {
+      console.error('Не вдалося призначити майстра:', error);
+      alert(error.response?.data?.error || 'Помилка призначення майстра');
     }
   };
 
@@ -458,6 +502,7 @@ export default function OrdersList({ user }) {
   const visibleTo = Math.min(currentPage * pageSize, sortedOrders.length);
   const activeOrder = selectedOrder || paginatedOrders[0] || sortedOrders[0] || orders[0] || FALLBACK_ORDER;
   const activeStatus = getStatusMeta(activeOrder.status);
+  const activeStatusHistory = Array.isArray(activeOrder.status_history) ? activeOrder.status_history : [];
   const completionPartsTotal = completionParts.reduce((total, usedPart) => {
     const stockPart = parts.find((part) => String(part.id) === String(usedPart.partId));
     return total + Number(stockPart?.price || 0) * Number(usedPart.quantity || 0);
@@ -541,7 +586,7 @@ export default function OrdersList({ user }) {
           <button className={filterStatus === 'all' ? 'active' : ''} type="button" onClick={() => setFilterStatus('all')}>
             Усі <span>{statusCounts.all}</span>
           </button>
-          {ORDER_STATUSES.slice(0, 4).map((status) => (
+          {ORDER_STATUSES.map((status) => (
             <button
               className={filterStatus === status.value ? 'active' : ''}
               key={status.value}
@@ -620,7 +665,26 @@ export default function OrdersList({ user }) {
                     <td>
                       <span className={`status-badge ${status.className}`}>{status.label}</span>
                     </td>
-                    <td>{order.master_name || '—'}</td>
+                    <td>
+                      {canAssignMaster ? (
+                        <select
+                          className="master-select"
+                          value={order.assigned_master_id || ''}
+                          onClick={(event) => event.stopPropagation()}
+                          onChange={(event) => assignMaster(order, event.target.value)}
+                          aria-label="Призначити майстра"
+                        >
+                          <option value="">Не призначено</option>
+                          {masters.map((master) => (
+                            <option key={master.id} value={master.id}>
+                              {master.full_name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        order.master_name || '—'
+                      )}
+                    </td>
                     <td>
                       <select
                         value={order.status}
@@ -745,6 +809,34 @@ export default function OrdersList({ user }) {
 
         <section className="details-section">
           <div className="details-section-title">
+            <h4>Майстер</h4>
+          </div>
+          <div className="details-list">
+            <div>
+              <span>Відповідальний:</span>
+              {canAssignMaster ? (
+                <select
+                  className="master-select details-master-select"
+                  value={activeOrder.assigned_master_id || ''}
+                  onChange={(event) => assignMaster(activeOrder, event.target.value)}
+                  aria-label="Призначити майстра"
+                >
+                  <option value="">Не призначено</option>
+                  {masters.map((master) => (
+                    <option key={master.id} value={master.id}>
+                      {master.full_name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <strong>{activeOrder.master_name || '—'}</strong>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="details-section">
+          <div className="details-section-title">
             <h4>Несправність</h4>
           </div>
           <p className="issue-text">{activeOrder.issue_description || 'Не вказано'}</p>
@@ -785,8 +877,39 @@ export default function OrdersList({ user }) {
           </section>
         )}
 
+        <section className="details-section">
+          <div className="details-section-title">
+            <h4>Історія статусів</h4>
+          </div>
+          {activeStatusHistory.length > 0 ? (
+            <div className="status-history-list">
+              {activeStatusHistory.map((historyItem) => {
+                const oldStatus = historyItem.old_status ? getStatusMeta(historyItem.old_status).label : 'Створено';
+                const newStatus = getStatusMeta(historyItem.new_status).label;
+
+                return (
+                  <div className="status-history-item" key={historyItem.id || `${historyItem.new_status}-${historyItem.changed_at}`}>
+                    <strong>{historyItem.old_status ? `${oldStatus} на ${newStatus}` : `Створено: ${newStatus}`}</strong>
+                    <span>
+                      {formatDate(historyItem.changed_at)}
+                      {historyItem.changed_by ? `, ${historyItem.changed_by}` : ''}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="issue-text">Історія зʼявиться після першої зміни статусу.</p>
+          )}
+        </section>
+
         <section className="details-actions">
           <h4>Дії</h4>
+          {activeOrder.status === COMPLETED_STATUS && (
+            <button className="primary-action issued-action" type="button" onClick={() => updateStatus(activeOrder, ISSUED_STATUS)}>
+              Видати клієнту
+            </button>
+          )}
           <button className="primary-action" type="button" onClick={focusActiveOrder}>Перейти до замовлення</button>
           <button type="button" onClick={printReceipt}>Друк квитанції</button>
           {canDeleteOrder && (

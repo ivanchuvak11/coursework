@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS devices (
 CREATE TABLE IF NOT EXISTS masters (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL UNIQUE,
-    specialization VARCHAR(100),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     username VARCHAR(100) UNIQUE
@@ -54,6 +53,28 @@ CREATE TABLE IF NOT EXISTS order_parts (
     price_at_time NUMERIC(10, 2)
 );
 
+CREATE TABLE IF NOT EXISTS order_status_history (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+    old_status VARCHAR(30),
+    new_status VARCHAR(30) NOT NULL,
+    changed_by VARCHAR(50),
+    changed_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS part_requests (
+    id SERIAL PRIMARY KEY,
+    part_id INTEGER REFERENCES spare_parts(id) ON DELETE SET NULL,
+    requested_part_name VARCHAR(150),
+    requested_quantity INTEGER NOT NULL DEFAULT 1,
+    comment TEXT,
+    status VARCHAR(30) DEFAULT 'нове',
+    requested_by VARCHAR(50),
+    created_at TIMESTAMP DEFAULT NOW(),
+    handled_by VARCHAR(50),
+    handled_at TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -75,6 +96,17 @@ ALTER TABLE masters
     ADD COLUMN IF NOT EXISTS username VARCHAR(100),
     ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE,
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE part_requests
+    ADD COLUMN IF NOT EXISTS part_id INTEGER,
+    ADD COLUMN IF NOT EXISTS requested_part_name VARCHAR(150),
+    ADD COLUMN IF NOT EXISTS requested_quantity INTEGER NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS comment TEXT,
+    ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'нове',
+    ADD COLUMN IF NOT EXISTS requested_by VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+    ADD COLUMN IF NOT EXISTS handled_by VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS handled_at TIMESTAMP;
 
 DO $$
 BEGIN
@@ -150,6 +182,16 @@ BEGIN
         FOREIGN KEY (part_id)
         REFERENCES spare_parts(id);
     END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'part_requests_part_id_fkey'
+    ) THEN
+        ALTER TABLE part_requests
+        ADD CONSTRAINT part_requests_part_id_fkey
+        FOREIGN KEY (part_id)
+        REFERENCES spare_parts(id)
+        ON DELETE SET NULL;
+    END IF;
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
@@ -157,12 +199,17 @@ CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
 CREATE INDEX IF NOT EXISTS idx_devices_client_id ON devices(client_id);
 CREATE INDEX IF NOT EXISTS idx_order_parts_order_id ON order_parts(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_parts_part_id ON order_parts(part_id);
+CREATE INDEX IF NOT EXISTS idx_order_status_history_order_id ON order_status_history(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_status_history_changed_at ON order_status_history(changed_at);
+CREATE INDEX IF NOT EXISTS idx_part_requests_status ON part_requests(status);
+CREATE INDEX IF NOT EXISTS idx_part_requests_created_at ON part_requests(created_at);
+CREATE INDEX IF NOT EXISTS idx_part_requests_requested_by ON part_requests(requested_by);
 `;
 
 const DEFAULT_MASTERS = [
-    { fullName: 'Андрій К.', specialization: 'Смартфони та планшети', username: 'master1' },
-    { fullName: 'Олег Т.', specialization: 'Ноутбуки та ПК', username: 'master2' },
-    { fullName: 'Петро І.', specialization: 'Ігрові консолі', username: 'master3' },
+    { fullName: 'Андрій К.', username: 'master1' },
+    { fullName: 'Олег Т.', username: 'master2' },
+    { fullName: 'Петро І.', username: 'master3' },
 ];
 
 const DEFAULT_SPARE_PARTS = [
