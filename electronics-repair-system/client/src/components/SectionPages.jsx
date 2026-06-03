@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { AVERAGE_REPAIR_PRICE_STORAGE_KEY, getStoredAverageRepairPrice } from '../utils/financeSettings';
 import '../styles/SharedDark.css';
 import '../styles/SectionPages.css';
 
@@ -332,10 +333,10 @@ export function ReportsPage() {
 
 export function FinancePage() {
   const { orders, parts, loading } = useDashboardData();
-  const [averageRepairPrice, setAverageRepairPrice] = useState(() => Number(localStorage.getItem('averageRepairPrice')) || 1200);
+  const [averageRepairPrice, setAverageRepairPrice] = useState(getStoredAverageRepairPrice);
 
   useEffect(() => {
-    localStorage.setItem('averageRepairPrice', String(averageRepairPrice));
+    localStorage.setItem(AVERAGE_REPAIR_PRICE_STORAGE_KEY, String(averageRepairPrice));
   }, [averageRepairPrice]);
 
   const inventoryValue = parts.reduce((sum, part) => sum + Number(part.quantity || 0) * Number(part.price || 0), 0);

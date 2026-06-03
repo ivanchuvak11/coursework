@@ -370,10 +370,6 @@ module.exports = function createOrderRoutes(authMiddleware) {
                 return res.status(400).json({ error: 'Для статусу "Виконано" використовуйте завершення ремонту з ціною.' });
             }
 
-            if (isRepairStatus(status, 'видано') && !canSeeAllOrders(req.user)) {
-                return res.status(403).json({ error: 'Тільки адміністратор або менеджер може видати замовлення клієнту' });
-            }
-
             const result = isRepairStatus(status, 'ремонт')
                 ? await pool.query(
                     `UPDATE orders

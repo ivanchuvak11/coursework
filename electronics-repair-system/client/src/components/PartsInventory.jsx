@@ -30,6 +30,7 @@ export default function PartsInventory({ user }) {
   const [deletingId, setDeletingId] = useState(null);
   const [sortField, setSortField] = useState('id');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [search, setSearch] = useState('');
   const [requestPart, setRequestPart] = useState(null);
   const [partRequest, setPartRequest] = useState(INITIAL_PART_REQUEST);
   const [requestSaving, setRequestSaving] = useState(false);
@@ -184,18 +185,30 @@ export default function PartsInventory({ user }) {
     return sortOrder === 'asc' ? '↑' : '↓';
   };
 
-  const sortedParts = useMemo(
-    () =>
-      [...parts].sort((a, b) => {
+  const sortedParts = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    const filteredParts = parts.filter((part) => {
+      if (!normalizedSearch) return true;
+
+      return [
+        part.id,
+        part.part_name,
+        part.category,
+        part.supplier,
+        part.quantity,
+        part.price,
+      ].some((value) => String(value || '').toLowerCase().includes(normalizedSearch));
+    });
+
+    return filteredParts.sort((a, b) => {
         const aValue = getPartSortValue(a, sortField);
         const bValue = getPartSortValue(b, sortField);
 
         if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
         return 0;
-      }),
-    [parts, sortField, sortOrder],
-  );
+      });
+  }, [parts, search, sortField, sortOrder]);
 
   if (loading) return <div className="loading">Завантаження...</div>;
 
@@ -211,6 +224,14 @@ export default function PartsInventory({ user }) {
 
       <div className="section-card parts-card">
         <div className="section-tools parts-tools">
+          <label className="parts-search" aria-label="Пошук деталей">
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Пошук за назвою, категорією, ціною..."
+            />
+          </label>
           {canEditInventory ? (
             <button className="btn-primary inventory-toggle" type="button" onClick={() => setShowForm((isOpen) => !isOpen)}>
               + Додати деталь
@@ -333,6 +354,13 @@ export default function PartsInventory({ user }) {
                   )}
                 </tr>
               ))}
+              {sortedParts.length === 0 && (
+                <tr>
+                  <td className="parts-empty" colSpan={5 + (canRequestPart ? 1 : 0) + (canDeletePart ? 1 : 0)}>
+                    Деталі за таким пошуком не знайдено
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

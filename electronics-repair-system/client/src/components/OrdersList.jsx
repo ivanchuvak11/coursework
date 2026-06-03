@@ -5,6 +5,7 @@ import { CheckCircle2, PlusCircle } from 'lucide-react';
 import logoUrl from '../assets/logo.png';
 import darkLogoUrl from '../assets/darklogo.png';
 import { isAdminRole, isManagerRole, isMasterRole } from '../utils/accessControl';
+import { getStoredAverageRepairPrice } from '../utils/financeSettings';
 import '../styles/SharedDark.css';
 import '../styles/OrdersList.css';
 
@@ -355,9 +356,11 @@ export default function OrdersList({ user }) {
     const existingParts = Array.isArray(order.used_parts) && order.used_parts.length
       ? order.used_parts.map((part) => ({ partId: String(part.part_id), quantity: Number(part.quantity_used || 1) }))
       : [EMPTY_COMPLETION_PART];
+    const existingLaborPrice = getOrderLaborPrice(order);
+    const defaultLaborPrice = existingLaborPrice > 0 ? existingLaborPrice : getStoredAverageRepairPrice();
 
     setCompletionOrder(order);
-    setCompletionPrice(getOrderLaborPrice(order) ? String(getOrderLaborPrice(order)) : '');
+    setCompletionPrice(defaultLaborPrice > 0 ? String(defaultLaborPrice) : '');
     setCompletionComment(order.completion_comment || '');
     setCompletionParts(existingParts);
   };
