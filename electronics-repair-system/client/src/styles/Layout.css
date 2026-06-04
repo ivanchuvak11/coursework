@@ -411,7 +411,7 @@ textarea {
 }
 
 :root[data-theme='dark'] .notification-panel {
-  background: #111827;
+  background: #121212;
 }
 
 .notification-panel-header {
