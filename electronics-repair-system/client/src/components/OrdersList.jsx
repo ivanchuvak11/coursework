@@ -468,13 +468,14 @@ export default function OrdersList({ user }) {
     }
 
     try {
-      await axios.put(`${API_URL}/api/clients/${clientId}`, { [field]: value });
+      const response = await axios.put(`${API_URL}/api/clients/${clientId}`, { [field]: value });
+      const updatedValue = response.data?.[field] ?? value;
       setEditingField(null);
       setEditValue('');
       setOrders((currentOrders) =>
-        currentOrders.map((order) => (order.client_id === clientId ? { ...order, [field]: value } : order)),
+        currentOrders.map((order) => (order.client_id === clientId ? { ...order, [field]: updatedValue } : order)),
       );
-      setSelectedOrder((order) => (order ? { ...order, [field]: value } : order));
+      setSelectedOrder((order) => (order?.client_id === clientId ? { ...order, [field]: updatedValue } : order));
     } catch (error) {
       console.error('Не вдалося оновити дані клієнта:', error);
       alert('Помилка оновлення даних клієнта');
