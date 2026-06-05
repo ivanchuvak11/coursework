@@ -618,6 +618,7 @@ textarea {
 
 .workspace {
   min-width: 0;
+  overflow-x: clip;
 }
 
 .sidebar-backdrop {
@@ -758,8 +759,39 @@ textarea {
 }
 
 @media (max-width: 760px) {
+  body {
+    background-attachment: scroll;
+  }
+
+  .app-main {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
   .topbar {
-    padding: 0 12px;
+    align-items: stretch;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    padding: 10px 12px;
+  }
+
+  .menu-button,
+  .notification-button,
+  .theme-toggle {
+    min-height: 44px;
+  }
+
+  .topbar-search {
+    grid-column: 1 / -1;
+    max-width: none;
+    min-width: 0;
+    order: 2;
+    width: 100%;
+  }
+
+  .topbar-search input {
+    font-size: 0.94rem;
+    min-width: 0;
   }
 
   .topbar-search kbd,
@@ -769,12 +801,72 @@ textarea {
     display: none;
   }
 
+  .topbar-actions {
+    gap: 8px;
+    margin-left: 0;
+  }
+
   .profile-menu {
+    border-left: 0;
+    gap: 6px;
     padding-left: 8px;
   }
 
+  .profile-menu img {
+    height: 36px;
+    width: 36px;
+  }
+
+  .logout-button {
+    height: 36px;
+    width: 36px;
+  }
+
   .notification-panel {
-    right: -58px;
+    max-height: calc(100dvh - 124px);
+    position: fixed;
+    right: 12px;
+    top: 112px;
     width: calc(100vw - 24px);
+  }
+
+  .notification-item-title,
+  .notification-meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .notification-meta div {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .notification-meta button {
+    flex: 1 1 120px;
+  }
+}
+
+@media (max-width: 420px) {
+  .sidebar,
+  .sidebar.collapsed {
+    padding: 22px 16px 16px;
+    width: min(300px, calc(100vw - 28px));
+  }
+
+  .brand {
+    margin-bottom: 24px;
+  }
+
+  .sidebar-link {
+    min-height: 46px;
+  }
+
+  .sidebar-card {
+    padding: 14px;
+  }
+
+  .help-card,
+  .sidebar.collapsed .help-card {
+    margin-top: 28px;
   }
 }

@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 60px;
+      background: #eef8f6;
+      color: #10233f;
+      font-family: Arial, sans-serif;
+    }
+    .stage {
+      width: 820px;
+      min-height: 980px;
+      margin-bottom: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef8f6;
+    }
+    .phone {
+      width: 430px;
+      padding: 14px;
+      border: 8px solid #10233f;
+      border-radius: 52px;
+      background: #10233f;
+      box-shadow: 0 30px 65px rgba(16, 35, 63, .2);
+    }
+    .phone-screen {
+      min-height: 850px;
+      overflow: hidden;
+      border-radius: 34px;
+      background: #f7fbfa;
+    }
+    .phone-bar {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      color: #10233f;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .contact {
+      padding: 18px 22px 20px;
+      text-align: center;
+      border-bottom: 1px solid #d7e6e3;
+      background: #fff;
+    }
+    .avatar {
+      width: 54px;
+      height: 54px;
+      margin: 0 auto 9px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #0d9488;
+      color: white;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .contact strong { display: block; font-size: 18px; }
+    .contact small { color: #71849a; }
+    .messages { padding: 30px 18px 38px; }
+    .date {
+      margin: 12px 0 16px;
+      text-align: center;
+      color: #8292a6;
+      font-size: 12px;
+    }
+    .bubble {
+      max-width: 88%;
+      margin-bottom: 18px;
+      padding: 15px 16px;
+      border-radius: 18px 18px 18px 5px;
+      background: #fff;
+      border: 1px solid #d8e6e4;
+      box-shadow: 0 5px 12px rgba(16, 35, 63, .06);
+      color: #263d57;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .bubble b { color: #0d9488; }
+    .time {
+      display: block;
+      margin-top: 7px;
+      color: #8a9bad;
+      font-size: 11px;
+      text-align: right;
+    }
+    .email-shell {
+      width: 780px;
+      overflow: hidden;
+      border: 1px solid #cbdedb;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 28px 65px rgba(16, 35, 63, .15);
+    }
+    .email-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 58px;
+      padding: 0 22px;
+      background: #f7fbfa;
+      border-bottom: 1px solid #d7e6e3;
+      color: #657a91;
+      font-size: 14px;
+    }
+    .email-dots { letter-spacing: 6px; color: #0d9488; }
+    .email-meta { padding: 22px 30px; border-bottom: 1px solid #e4eeec; }
+    .email-meta h2 { margin: 0 0 16px; font-size: 24px; }
+    .sender { display: flex; gap: 13px; align-items: center; }
+    .sender .avatar { width: 42px; height: 42px; margin: 0; font-size: 16px; }
+    .sender div:last-child { font-size: 13px; color: #71849a; line-height: 1.5; }
+    .sender strong { color: #10233f; }
+    .email-body { padding: 26px 34px 34px; background: #eef8f6; }
+    .email-card { overflow: hidden; background: #fff; }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+    }
+    .brand { color: #0d9488; font-size: 22px; font-weight: 700; }
+    .order-pill {
+      padding: 8px 14px;
+      border: 1px solid #86efac;
+      border-radius: 999px;
+      background: #dcfce7;
+      color: #064e3b;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .hero {
+      margin: 0 22px 18px;
+      padding: 22px;
+      border: 1px solid #c8dddd;
+      border-radius: 14px;
+      background: #e7f4f2;
+    }
+    .hero h1 { margin: 0 0 10px; font-size: 26px; }
+    .hero p { margin: 0; color: #51677f; font-size: 14px; line-height: 1.6; }
+    .payment {
+      margin: 0 22px 18px;
+      padding: 18px 22px;
+      border-radius: 12px;
+      background: #0d9488;
+      color: white;
+    }
+    .payment small { color: #ccfbf1; font-weight: 700; text-transform: uppercase; }
+    .payment strong { display: block; margin-top: 7px; font-size: 28px; }
+    .detail-title { margin: 0 22px 10px; font-size: 15px; font-weight: 700; }
+    .details { margin: 0 22px 22px; border: 1px solid #d7e2ea; }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 13px 16px;
+      border-bottom: 1px solid #e5edf2;
+      color: #63768c;
+      font-size: 13px;
+    }
+    .row:last-child { border-bottom: 0; }
+    .row b { color: #10233f; }
+    .status {
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #16a34a;
+      color: white;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <section id="sms" class="stage">
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="phone-bar"><span>14:32</span><span>LTE&nbsp;&nbsp;●●●&nbsp;&nbsp;87%</span></div>
+        <div class="contact">
+          <div class="avatar">СЛ</div>
+          <strong>Смарт лайф</strong>
+          <small>SMS • сервісний центр</small>
+        </div>
+        <div class="messages">
+          <div class="date">Сьогодні, 10:15</div>
+          <div class="bubble">
+            <b>Смарт лайф:</b> замовлення #RM-2024-0048 (Samsung Galaxy S22) прийнято в роботу. Ми повідомимо, коли ремонт буде виконано.
+            <span class="time">10:15</span>
+          </div>
+          <div class="date">Сьогодні, 14:32</div>
+          <div class="bubble">
+            <b>Смарт лайф:</b> ремонт замовлення #RM-2024-0048 виконано. До оплати: 2 180,00 грн. Пристрій готовий до видачі.
+            <span class="time">14:32</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="email" class="stage">
+    <div class="email-shell">
+      <div class="email-top"><span class="email-dots">● ● ●</span><span>Вхідні / Смарт лайф</span></div>
+      <div class="email-meta">
+        <h2>Ремонт замовлення #RM-2024-0048 виконано</h2>
+        <div class="sender">
+          <div class="avatar">СЛ</div>
+          <div><strong>Смарт лайф</strong> &lt;service@example.com&gt;<br>для: client@example.com</div>
+        </div>
+      </div>
+      <div class="email-body">
+        <div class="email-card">
+          <div class="brand-row"><span class="brand">Смарт лайф</span><span class="order-pill">#RM-2024-0048</span></div>
+          <div class="hero">
+            <h1>Ремонт виконано</h1>
+            <p>Вітаємо, Іване. Ваш пристрій відремонтовано та підготовлено до видачі.</p>
+          </div>
+          <div class="payment"><small>До оплати</small><strong>2 180,00 грн</strong></div>
+          <div class="detail-title">Деталі замовлення</div>
+          <div class="details">
+            <div class="row"><span>Поточний статус</span><span class="status">Виконано</span></div>
+            <div class="row"><span>Номер замовлення</span><b>#RM-2024-0048</b></div>
+            <div class="row"><span>Пристрій</span><b>Samsung Galaxy S22</b></div>
+            <div class="row"><span>Що далі</span><b>Очікуємо вас для видачі</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <script>
+    if (location.hash === "#email") {
+      document.querySelector("#sms").style.display = "none";
+    }
+  </script>
+</body>
+</html>
