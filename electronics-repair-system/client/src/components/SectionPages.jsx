@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { API_URL } from '../utils/api';
 import { AVERAGE_REPAIR_PRICE_STORAGE_KEY, getStoredAverageRepairPrice } from '../utils/financeSettings';
 import '../styles/SharedDark.css';
 import '../styles/SectionPages.css';
-
-const API_URL = 'http://localhost:5000/api';
 
 const statusLabels = {
   прийнято: 'Нове замовлення',

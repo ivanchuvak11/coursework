@@ -201,6 +201,16 @@ npm run dev
 Адреси після запуску:
 
 - API: `http://localhost:5000/api`
+
+Client API URL for Render:
+
+Create `client/.env` locally or add an environment variable in Render:
+
+```env
+VITE_API_URL=https://your-render-backend.onrender.com/api
+```
+
+The frontend falls back to `http://localhost:5000/api` when `VITE_API_URL` is not set.
 - клієнтська частина: `http://localhost:5173`
 
 ## Основні API-маршрути

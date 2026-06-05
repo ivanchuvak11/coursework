@@ -5,11 +5,10 @@ import { CheckCircle2, PlusCircle } from 'lucide-react';
 import logoUrl from '../assets/logo.png';
 import darkLogoUrl from '../assets/darklogo.png';
 import { isAdminRole, isManagerRole, isMasterRole } from '../utils/accessControl';
+import { API_URL } from '../utils/api';
 import { getStoredAverageRepairPrice } from '../utils/financeSettings';
 import '../styles/SharedDark.css';
 import '../styles/OrdersList.css';
-
-const API_URL = 'http://localhost:5000/api';
 
 const ORDER_STATUSES = [
   { value: 'прийнято', label: 'Нове замовлення', shortLabel: 'Нове', className: 'status-accepted' },

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_URL } from '../utils/api';
 import '../styles/SharedDark.css';
 import '../styles/NewOrderForm.css';
 
@@ -25,7 +26,7 @@ export default function NewOrderForm() {
     event.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:5000/api/orders', form);
+      const response = await axios.post(`${API_URL}/orders`, form);
       setMessage(`Замовлення #${response.data.id} створено`);
       setForm(INITIAL_FORM);
       window.dispatchEvent(new Event('orders-summary-refresh'));

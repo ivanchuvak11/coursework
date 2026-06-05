@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ClipboardList, Eye, EyeOff, Package, ReceiptText, ShieldCheck } from 'lucide-react';
+import { API_URL } from '../utils/api';
 import '../styles/Login.css';
 
 const featureItems = [
@@ -38,7 +39,7 @@ export default function Login({ onLogin }) {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', { username, password });
+      const response = await axios.post(`${API_URL}/auth/login`, { username, password });
 
       if (response.data.success) {
         localStorage.setItem('token', response.data.token);

@@ -2,11 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Send, Trash2 } from 'lucide-react';
 import { isAdminRole, isManagerRole, isMasterRole } from '../utils/accessControl';
+import { API_URL } from '../utils/api';
 import '../styles/SharedDark.css';
 import '../styles/SectionPages.css';
 import '../styles/PartsInventory.css';
-
-const API_URL = 'http://localhost:5000/api';
 
 const INITIAL_PART = {
   part_name: '',

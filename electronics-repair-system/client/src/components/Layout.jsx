@@ -20,10 +20,10 @@ import logoUrl from '../assets/logo.png';
 import darkLogoUrl from '../assets/darklogo.png';
 import avatarUrl from '../assets/avatar.png';
 import { isAdminRole, isManagerRole, isMasterRole } from '../utils/accessControl';
+import { API_URL } from '../utils/api';
 import '../styles/Layout.css';
 
 const BRAND_NAME = 'Смарт лайф';
-const API_URL = 'http://localhost:5000/api';
 
 const mainNavItems = [
   { path: '/', label: 'Замовлення', icon: ClipboardList },

@@ -9,6 +9,7 @@ import NewOrderForm from './components/NewOrderForm';
 import PartsInventory from './components/PartsInventory';
 import { ClientsPage, FinancePage, ReportsPage, SettingsPage } from './components/SectionPages';
 import { isMasterRole } from './utils/accessControl';
+import { API_URL } from './utils/api';
 import './App.css';
 
 function AuthenticatedApp({ user, onLogout }) {
@@ -51,7 +52,7 @@ function App() {
 
   const checkAuth = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/auth/me');
+      const response = await axios.get(`${API_URL}/auth/me`);
       setUser(response.data);
       setIsAuthenticated(true);
     } catch {
@@ -69,7 +70,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await axios.post('http://localhost:5000/api/auth/logout');
+      await axios.post(`${API_URL}/auth/logout`);
     } catch {
       console.info('Сесію на сервері вже завершено або сервер недоступний');
     }
