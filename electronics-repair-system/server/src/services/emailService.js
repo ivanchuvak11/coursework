@@ -34,7 +34,7 @@ async function createEmailTransporter() {
             let settled = false;
             const connectOptions = {
                 host: 'smtp.gmail.com',
-                port,
+                port: 465,
                 family: 4,
                 timeout: 15000,
                 servername: 'smtp.gmail.com',
