@@ -400,7 +400,9 @@ module.exports = function createOrderRoutes(authMiddleware) {
             `, [Number(id)]);
 
             try {
-                await sendStatusEmail(Number(id), status, clientResult.rows[0]);
+                sendStatusEmail(Number(id), status, clientResult.rows[0]).catch((notificationError) => {
+                    console.error('Email Ð¿Ñ€Ð¾ ÑÑ‚Ð°Ñ‚ÑƒÑ Ð½Ðµ Ð²Ñ–Ð´Ð¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð¾:', notificationError.message);
+                });
             } catch (notificationError) {
                 console.error('Email про статус не відправлено:', notificationError.message);
             }
@@ -528,7 +530,9 @@ module.exports = function createOrderRoutes(authMiddleware) {
             await client.query('COMMIT');
 
             try {
-                await sendCompletionNotifications(Number(id), totalRepairPrice);
+                sendCompletionNotifications(Number(id), totalRepairPrice).catch((notificationError) => {
+                    console.error('Ð¡Ð¿Ð¾Ð²Ñ–Ñ‰ÐµÐ½Ð½Ñ Ð¿Ñ€Ð¾ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð½Ñ Ð½Ðµ Ð²Ñ–Ð´Ð¿Ñ€Ð°Ð²Ð»ÐµÐ½Ð¾:', notificationError.message);
+                });
             } catch (notificationError) {
                 console.error('Сповіщення про завершення не відправлено:', notificationError.message);
             }

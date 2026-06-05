@@ -370,14 +370,24 @@ export default function OrdersList({ user }) {
       return;
     }
 
+    const previousOrder = { ...order };
+    const optimisticOrder = { ...order, status };
+
+    setOrders((currentOrders) =>
+      currentOrders.map((item) => (item.id === order.id ? { ...item, status } : item)),
+    );
+    setSelectedOrder((currentOrder) => (currentOrder?.id === order.id ? { ...currentOrder, status } : currentOrder));
+
     try {
       const response = await axios.put(`${API_URL}/api/orders/${order.id}/status`, { status });
-      const updatedOrder = { ...order, ...response.data, status: response.data?.status || status };
+      const updatedOrder = { ...optimisticOrder, ...response.data, status: response.data?.status || status };
 
       setOrders((currentOrders) => currentOrders.map((item) => (item.id === order.id ? { ...item, ...updatedOrder } : item)));
       setSelectedOrder((currentOrder) => (currentOrder?.id === order.id ? { ...currentOrder, ...updatedOrder } : currentOrder));
       window.dispatchEvent(new Event('orders-summary-refresh'));
     } catch (error) {
+      setOrders((currentOrders) => currentOrders.map((item) => (item.id === order.id ? { ...item, ...previousOrder } : item)));
+      setSelectedOrder((currentOrder) => (currentOrder?.id === order.id ? { ...currentOrder, ...previousOrder } : currentOrder));
       console.error('Не вдалося оновити статус:', error);
       alert('Помилка оновлення статусу');
     }
