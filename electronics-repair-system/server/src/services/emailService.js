@@ -1,30 +1,71 @@
 const nodemailer = require('nodemailer');
 const dns = require('dns');
+const net = require('net');
+const tls = require('tls');
 
 if (typeof dns.setDefaultResultOrder === 'function') {
     dns.setDefaultResultOrder('ipv4first');
 }
 
-const emailTransporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    family: 4,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    lookup: (hostname, options, callback) => {
-        dns.lookup(hostname, { ...options, family: 4 }, callback);
-    },
-    tls: {
-        servername: 'smtp.gmail.com',
-        rejectUnauthorized: true,
-    },
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 30000,
-});
+async function resolveGmailIpv4Host() {
+    try {
+        const addresses = await dns.promises.resolve4('smtp.gmail.com');
+        return addresses[0] || 'smtp.gmail.com';
+    } catch (error) {
+        console.warn('Gmail IPv4 DNS не вдалося отримати, використовую smtp.gmail.com:', error.message);
+        return 'smtp.gmail.com';
+    }
+}
+
+async function createEmailTransporter() {
+    const host = 'smtp.gmail.com';
+    const port = Number(process.env.EMAIL_PORT || 465);
+    const secure = String(process.env.EMAIL_SECURE || 'true').toLowerCase() !== 'false';
+
+    return nodemailer.createTransport({
+        host,
+        port,
+        secure,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+        getSocket: (_options, callback) => {
+            let settled = false;
+            const connectOptions = {
+                host: 'smtp.gmail.com',
+                port,
+                family: 4,
+                timeout: 15000,
+                servername: 'smtp.gmail.com',
+            };
+            const onReady = () => {
+                if (settled) return;
+                settled = true;
+                callback(null, { connection: socket });
+            };
+
+            const socket = secure ? tls.connect(connectOptions, onReady) : net.connect(connectOptions, onReady);
+
+            socket.once('timeout', () => {
+                socket.destroy(new Error('Gmail SMTP connection timeout'));
+            });
+
+            socket.once('error', (error) => {
+                if (settled) return;
+                settled = true;
+                callback(error);
+            });
+        },
+        tls: {
+            servername: 'smtp.gmail.com',
+            rejectUnauthorized: true,
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 30000,
+    });
+}
 
 function isEmailConfigured() {
     return Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
@@ -37,6 +78,7 @@ async function verifyEmailTransport() {
     }
 
     try {
+        const emailTransporter = await createEmailTransporter();
         await emailTransporter.verify();
         console.log('✅ Gmail налаштовано');
         return true;
@@ -53,6 +95,7 @@ async function sendEmail(to, subject, htmlContent) {
     }
 
     try {
+        const emailTransporter = await createEmailTransporter();
         await emailTransporter.sendMail({
             from: `"Смарт лайф" <${process.env.EMAIL_USER}>`,
             to,
