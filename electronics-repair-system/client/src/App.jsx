@@ -52,7 +52,7 @@ function App() {
 
   const checkAuth = async () => {
     try {
-      const response = await axios.get(`${API_URL}/auth/me`);
+      const response = await axios.get(`${API_URL}/api/auth/me`);
       setUser(response.data);
       setIsAuthenticated(true);
     } catch {
@@ -70,7 +70,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${API_URL}/auth/logout`);
+      await axios.post(`${API_URL}/api/auth/logout`);
     } catch {
       console.info('Сесію на сервері вже завершено або сервер недоступний');
     }

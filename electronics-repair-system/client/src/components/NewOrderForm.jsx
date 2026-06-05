@@ -26,7 +26,7 @@ export default function NewOrderForm() {
     event.preventDefault();
 
     try {
-      const response = await axios.post(`${API_URL}/orders`, form);
+      const response = await axios.post(`${API_URL}/api/orders`, form);
       setMessage(`Замовлення #${response.data.id} створено`);
       setForm(INITIAL_FORM);
       window.dispatchEvent(new Event('orders-summary-refresh'));

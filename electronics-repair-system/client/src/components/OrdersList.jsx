@@ -259,7 +259,7 @@ export default function OrdersList({ user }) {
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(`${API_URL}/orders`);
+      const response = await axios.get(`${API_URL}/api/orders`);
       setOrders(response.data);
     } catch (error) {
       console.error('Не вдалося завантажити замовлення:', error);
@@ -275,7 +275,7 @@ export default function OrdersList({ user }) {
   useEffect(() => {
     const fetchParts = async () => {
       try {
-        const response = await axios.get(`${API_URL}/parts`);
+        const response = await axios.get(`${API_URL}/api/parts`);
         setParts(response.data);
       } catch (error) {
         console.error('Не вдалося завантажити деталі для завершення ремонту:', error);
@@ -295,7 +295,7 @@ export default function OrdersList({ user }) {
 
     const fetchMasters = async () => {
       try {
-        const response = await axios.get(`${API_URL}/masters`);
+        const response = await axios.get(`${API_URL}/api/masters`);
         if (isMounted) {
           setMasters(response.data);
         }
@@ -371,7 +371,7 @@ export default function OrdersList({ user }) {
     }
 
     try {
-      const response = await axios.put(`${API_URL}/orders/${order.id}/status`, { status });
+      const response = await axios.put(`${API_URL}/api/orders/${order.id}/status`, { status });
       const updatedOrder = { ...order, ...response.data, status: response.data?.status || status };
 
       setOrders((currentOrders) => currentOrders.map((item) => (item.id === order.id ? { ...item, ...updatedOrder } : item)));
@@ -387,7 +387,7 @@ export default function OrdersList({ user }) {
     if (!masterId) return;
 
     try {
-      const response = await axios.put(`${API_URL}/orders/${order.id}/master`, { masterId: Number(masterId) });
+      const response = await axios.put(`${API_URL}/api/orders/${order.id}/master`, { masterId: Number(masterId) });
       const updatedOrder = { ...order, ...response.data };
 
       setOrders((currentOrders) => currentOrders.map((item) => (item.id === order.id ? { ...item, ...updatedOrder } : item)));
@@ -426,7 +426,7 @@ export default function OrdersList({ user }) {
 
     try {
       setCompletionSaving(true);
-      const response = await axios.put(`${API_URL}/orders/${completionOrder.id}/complete`, {
+      const response = await axios.put(`${API_URL}/api/orders/${completionOrder.id}/complete`, {
         laborPrice: completionPrice,
         comment: completionComment,
         usedParts: completionParts
@@ -441,7 +441,7 @@ export default function OrdersList({ user }) {
       window.dispatchEvent(new Event('orders-summary-refresh'));
       closeCompletionDialog();
 
-      const partsResponse = await axios.get(`${API_URL}/parts`);
+      const partsResponse = await axios.get(`${API_URL}/api/parts`);
       setParts(partsResponse.data);
     } catch (error) {
       console.error('Не вдалося завершити замовлення:', error);
@@ -458,7 +458,7 @@ export default function OrdersList({ user }) {
     }
 
     try {
-      await axios.put(`${API_URL}/clients/${clientId}`, { [field]: value });
+      await axios.put(`${API_URL}/api/clients/${clientId}`, { [field]: value });
       setEditingField(null);
       setEditValue('');
       setOrders((currentOrders) =>
@@ -545,7 +545,7 @@ export default function OrdersList({ user }) {
     if (!activeOrder?.id || !confirm(`Скасувати замовлення ${getOrderNumber(activeOrder.id)}?`)) return;
 
     try {
-      await axios.delete(`${API_URL}/orders/${activeOrder.id}`);
+      await axios.delete(`${API_URL}/api/orders/${activeOrder.id}`);
       setOrders((currentOrders) => currentOrders.filter((order) => order.id !== activeOrder.id));
       setSelectedOrder(null);
       setShowDetails(false);

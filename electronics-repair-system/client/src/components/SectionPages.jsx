@@ -32,8 +32,8 @@ function useDashboardData() {
     const loadData = async () => {
       try {
         const [ordersResponse, partsResponse] = await Promise.all([
-          axios.get(`${API_URL}/orders`),
-          axios.get(`${API_URL}/parts`),
+          axios.get(`${API_URL}/api/orders`),
+          axios.get(`${API_URL}/api/parts`),
         ]);
 
         if (isMounted) {

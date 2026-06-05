@@ -207,10 +207,10 @@ Client API URL for Render:
 Create `client/.env` locally or add an environment variable in Render:
 
 ```env
-VITE_API_URL=https://your-render-backend.onrender.com/api
+VITE_API_URL=https://your-render-backend.onrender.com
 ```
 
-The frontend falls back to `http://localhost:5000/api` when `VITE_API_URL` is not set.
+The frontend falls back to `http://localhost:5000` when `VITE_API_URL` is not set. Requests add `/api/...` in the code.
 - клієнтська частина: `http://localhost:5173`
 
 ## Основні API-маршрути

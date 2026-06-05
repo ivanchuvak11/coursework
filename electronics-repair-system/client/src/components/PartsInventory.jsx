@@ -39,7 +39,7 @@ export default function PartsInventory({ user }) {
 
   const fetchParts = async () => {
     try {
-      const response = await axios.get(`${API_URL}/parts`);
+      const response = await axios.get(`${API_URL}/api/parts`);
       setParts(response.data);
     } catch (error) {
       console.error('Не вдалося завантажити склад:', error);
@@ -82,7 +82,7 @@ export default function PartsInventory({ user }) {
     if (!canEditInventory) return;
 
     try {
-      await axios.post(`${API_URL}/parts`, newPart);
+      await axios.post(`${API_URL}/api/parts`, newPart);
       setNewPart(INITIAL_PART);
       setShowForm(false);
       fetchParts();
@@ -104,7 +104,7 @@ export default function PartsInventory({ user }) {
 
     try {
       setUpdatingId(id);
-      await axios.put(`${API_URL}/parts/${id}`, { quantity });
+      await axios.put(`${API_URL}/api/parts/${id}`, { quantity });
       setParts((currentParts) => currentParts.map((part) => (part.id === id ? { ...part, quantity } : part)));
     } catch (error) {
       console.error('Не вдалося оновити кількість:', error);
@@ -121,7 +121,7 @@ export default function PartsInventory({ user }) {
 
     try {
       setDeletingId(part.id);
-      await axios.delete(`${API_URL}/parts/${part.id}`);
+      await axios.delete(`${API_URL}/api/parts/${part.id}`);
       setParts((currentParts) => currentParts.filter((item) => item.id !== part.id));
     } catch (error) {
       console.error('Не вдалося видалити деталь:', error);
@@ -152,7 +152,7 @@ export default function PartsInventory({ user }) {
 
     try {
       setRequestSaving(true);
-      await axios.post(`${API_URL}/part-requests`, {
+      await axios.post(`${API_URL}/api/part-requests`, {
         partId: requestPart.id || null,
         partName: requestPart.isCustom ? partRequest.partName : undefined,
         quantity: Number(partRequest.quantity),

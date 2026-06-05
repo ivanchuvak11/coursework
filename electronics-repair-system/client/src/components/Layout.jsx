@@ -144,7 +144,7 @@ const Layout = ({ children, user, onLogout }) => {
 
     const fetchSummaryCounts = async () => {
       try {
-        const response = await axios.get(`${API_URL}/orders`);
+        const response = await axios.get(`${API_URL}/api/orders`);
         const counts = response.data.reduce((currentCounts, order) => {
           currentCounts[order.status] = (currentCounts[order.status] || 0) + 1;
           return currentCounts;
@@ -176,7 +176,7 @@ const Layout = ({ children, user, onLogout }) => {
 
     const fetchPartRequests = async () => {
       try {
-        const response = await axios.get(`${API_URL}/part-requests`);
+        const response = await axios.get(`${API_URL}/api/part-requests`);
         if (isActive) {
           setPartRequests(response.data);
         }
@@ -220,7 +220,7 @@ const Layout = ({ children, user, onLogout }) => {
 
   const updatePartRequestStatus = async (requestId, status) => {
     try {
-      const response = await axios.patch(`${API_URL}/part-requests/${requestId}/status`, { status });
+      const response = await axios.patch(`${API_URL}/api/part-requests/${requestId}/status`, { status });
       setPartRequests((currentRequests) =>
         currentRequests.map((request) => (request.id === requestId ? response.data : request)),
       );
